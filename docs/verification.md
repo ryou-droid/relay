@@ -23,3 +23,11 @@ GitHubのoriginは `https://github.com/ryou-droid/relay.git`。初期確認でre
 - Next.js 16.3.8の隔離した開発サーバーに、実際のログイン・登録フォームのAction IDでHTTP POST。OriginをCodespaces URL、x-forwarded-hostをlocalhost:3000として不一致を再現。許可したURLはActionへ到達し303応答。別Codespaceと外部サイトは500のInvalid Server Actions requestで拒否。
 - HTTPテストではSupabase接続を設定せず、Action内の設定確認による/setupリダイレクトを到達証拠として使用。実際のアカウント登録・ログイン成功は、ユーザーの接続済みCodespacesで確認する。
 - `npm run build` / `npm run typecheck` / `npm run lint` / `npm test`：すべて成功。キー・Auth設定・本番環境は変更していない。
+
+## Vercel登録エラーの診断追加
+
+- `register()`に、SDKのmessage・code・status・エラー種別、照合番号、参照先ホスト、メタデータ文字数を選択して記録する構造化ログを追加。フォーム・Authレスポンス・キー・Cookieはログに渡さず、エラーメッセージ中の入力値・トークンも伏せる。
+- 実際の登録フォーム→Server Action→Supabase SDKを隔離したNext.js開発サーバーと模擬Auth APIで実行。メタデータ3項目の送信、HTTP 500/429のログ、画面の確認番号、正常応答によるログイン画面への遷移を確認。実Supabaseへの登録試行ではない。
+- Auth用の制限付きDBロールで実SQLの登録トリガーを実行。正常入力でprofilesを作成し、必須メタデータ欠落・空文字・長さ超過でAuthユーザーもロールバックすることを確認。診断マイグレーションの再適用と読み取り専用診断SQLも検証。
+- build・TypeScript・lint・テストが成功。本番データ、Supabase設定・キー、Vercelデプロイは変更していない。
+- 実際の障害原因はVercel/Supabaseログ未取得のため未確定。診断ログを利用して次の登録試行で特定する。

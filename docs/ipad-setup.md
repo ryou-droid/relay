@@ -8,7 +8,7 @@ Safariで https://supabase.com/dashboard を開きます。Relay専用の空の�
 
 ## 2. DBを作る
 
-GitHubの `supabase/migrations/202610040001_relay.sql` を開き、Raw表示の全文をコピーします。Supabaseの **SQL Editor → New query** に貼り付け、**Run** を押します。初回に1度だけ実行します。
+GitHubの `supabase/migrations/202610040001_relay.sql` を開き、Raw表示の全文をコピーします。Supabaseの **SQL Editor → New query** に貼り付け、**Run** を押します。初回に1度だけ実行します。続いて `supabase/migrations/202610040002_registration_diagnostics.sql` も実行します（登録時のDBエラー診断ログ用）。
 
 - このSQLが10テーブル、RLS、登録トリガー、操作用RPCを作ります。
 - `supabase/config.toml` はCLI用なので、管理画面へ貼り付けません。

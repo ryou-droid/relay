@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { supabase, configured } from "@/lib/supabase";
 import { session } from "@/lib/session";
+import { randomUUID } from "node:crypto";
+import { registrationFailure } from "@/lib/server/registration-log.mjs";
 const field = (f: FormData, k: string) => String(f.get(k) || "").trim();
 const fail = (path: string, message: string): never =>
   redirect(`${path}?error=${encodeURIComponent(message)}`);
@@ -18,7 +20,31 @@ export async function login(f: FormData) {
   redirect("/");
 }
 export async function register(f: FormData) {
-  if (!configured()) redirect("/setup");
+  // Use the same direct environment references as the Supabase client, including
+  // NEXT_PUBLIC values resolved at build time. Values are never written to logs.
+  const registrationEnvironment = {
+    NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:
+      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    VERCEL_ENV: process.env.VERCEL_ENV,
+    NODE_ENV: process.env.NODE_ENV,
+  };
+  if (!configured()) {
+    console.error(
+      "[Relay registration]",
+      JSON.stringify(
+        registrationFailure({
+          reference: randomUUID(),
+          stage: "environment",
+          env: registrationEnvironment,
+          error: new Error(
+            "Required Supabase environment variables are missing.",
+          ),
+        }),
+      ),
+    );
+    redirect("/setup");
+  }
   const name = field(f, "full_name"),
     department = field(f, "planned_department"),
     position = field(f, "position"),
@@ -33,19 +59,53 @@ export async function register(f: FormData) {
     password.length < 8
   )
     fail("/register", "入力内容を確認してください。");
-  const db = await supabase();
-  const { data, error } = await db.auth.signUp({
-    email: field(f, "email"),
-    password,
-    options: {
-      data: { full_name: name, planned_department: department, position },
-    },
-  });
-  if (error)
-    fail(
-      "/register",
-      "登録できませんでした。入力内容と認証設定を確認してください。",
+  const reference = randomUUID();
+  const email = field(f, "email");
+  const metadata = {
+    full_name: name,
+    planned_department: department,
+    position,
+  };
+  const logFailure = (error: unknown, stage: string) => {
+    console.error(
+      "[Relay registration]",
+      JSON.stringify(
+        registrationFailure({
+          reference,
+          stage,
+          error,
+          env: registrationEnvironment,
+          redactions: [email, password, name, department, position],
+          metadataLengths: Object.fromEntries(
+            Object.entries(metadata).map(([key, value]) => [
+              key,
+              Array.from(value).length,
+            ]),
+          ),
+        }),
+      ),
     );
+  };
+  const failureMessage = `登録できませんでした。時間をおいて再度お試しください。解決しない場合は管理者へお問い合わせください。（確認番号：${reference}）`;
+  let stage = "client_initialization";
+  let result;
+  try {
+    const db = await supabase();
+    stage = "auth.signUp";
+    result = await db.auth.signUp({
+      email,
+      password,
+      options: { data: metadata },
+    });
+  } catch (error) {
+    logFailure(error, stage);
+    return fail("/register", failureMessage);
+  }
+  const { data, error } = result;
+  if (error) {
+    logFailure(error, "auth.signUp");
+    fail("/register", failureMessage);
+  }
   if (data.session) redirect("/waiting");
   redirect(
     "/login?message=" +
