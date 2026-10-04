@@ -16,3 +16,10 @@ DBテストでは未所属・別部署・別組織の隔離、組織/部署重�
 未検証：実Supabaseのメール配送・トークン更新・REST API統合、実機iOS Safari/Android Chrome。READMEの受け入れ確認手順に従って接続後に確認してください。
 
 GitHubのoriginは `https://github.com/ryou-droid/relay.git`。初期確認でremote refは0件でした。追加指示の外部公開禁止に従い、push・デプロイ・本番DBへの適用は実施していません。
+
+## Codespaces Server Actions修正の検証
+
+- `next dev`だけで、現在のCodespaceのポート3000をallowedDevOrigins / Server Actions allowedOriginsへ設定。production build/startでは追加Originがないことを、Next.jsの実際の設定ローダーで確認。
+- Next.js 16.3.8の隔離した開発サーバーに、実際のログイン・登録フォームのAction IDでHTTP POST。OriginをCodespaces URL、x-forwarded-hostをlocalhost:3000として不一致を再現。許可したURLはActionへ到達し303応答。別Codespaceと外部サイトは500のInvalid Server Actions requestで拒否。
+- HTTPテストではSupabase接続を設定せず、Action内の設定確認による/setupリダイレクトを到達証拠として使用。実際のアカウント登録・ログイン成功は、ユーザーの接続済みCodespacesで確認する。
+- `npm run build` / `npm run typecheck` / `npm run lint` / `npm test`：すべて成功。キー・Auth設定・本番環境は変更していない。

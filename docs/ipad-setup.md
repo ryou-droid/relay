@@ -58,7 +58,9 @@ Supabaseの **Authentication → Sign In / Providers → Email**（管理画面�
 **Authentication → Email Templates → Confirm signup** のリンクを次へ変更して保存します。
 
 ```html
-<a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email">メールアドレスを確認する</a>
+<a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=email"
+  >メールアドレスを確認する</a
+>
 ```
 
 Supabase標準のテスト用メール送信は、プロジェクトのチームメンバーのメール宛に制限される場合があります。まず自分のSupabaseアカウントのメールアドレスで登録してください。配信できない場合はAuthのログと送信制限を確認します。一般利用者への配信や複数メールのテストには、別途SMTPの設定が必要になることがあります。今回は有料SMTPを契約する必要はありません。
@@ -91,3 +93,14 @@ Relayへ戻り、**所属状況を再確認** を押すとホームが開きま�
 別部署・別組織の隔離も確認する場合は、READMEの所属SQLを使い、追加ユーザーを別部署/別組織に所属させます。自分の投稿のURLをそのユーザーで開いても表示できないことを確認してください。
 
 終了後はCodespacesを停止して無料枠の消費を止めます。プレビューURLが変わったらSupabaseのSite URLとRedirect URLsも更新します。Vercelの本番デプロイはこの手順には含みません。
+
+## Codespacesでフォーム送信が失敗した場合
+
+`Invalid Server Actions request` は、ブラウザのOriginとCodespacesプロキシから届くHostの不一致で発生します。Relayは `next dev` の場合だけ、Codespaces標準の環境変数から**現在のCodespaceのポート3000**を許可します。本番build/startでは追加許可しません。`*.app.github.dev` のような広い許可や、Origin検証の無効化は不要です。
+
+1. ターミナルで `Ctrl+C` を押して開発サーバーを停止します。
+2. `git pull --ff-only origin main` で修正を取得します。
+3. `npm ci` の後、`npm run dev` で起動します。設定の反映には再起動が必要です。
+4. Portsの3000をPrivateのまま開き直し、古いタブを閉じてログイン・新規登録を再送信します。
+
+この設定は `CODESPACES=true`、`CODESPACE_NAME`、`GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN`（省略時app.github.dev）を使用します。キーの変更は不要です。別ポートや別CodespaceのURLでは送信できません。`proxy.ts`でOrigin/Hostを書き換えず、Next.js自身のCSRF検証を維持します。
