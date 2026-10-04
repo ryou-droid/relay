@@ -1,0 +1,27 @@
+"use client";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+const links = [
+  ["/", "⌂", "ホーム"],
+  ["/posts/new", "＋", "投稿"],
+  ["/history", "◷", "履歴"],
+  ["/me", "○", "マイページ"],
+];
+export default function Nav() {
+  const path = usePathname();
+  return (
+    <nav className="bottom-nav" aria-label="メインナビゲーション">
+      {links.map(([href, icon, label]) => (
+        <Link
+          key={href}
+          href={href}
+          aria-current={path === href ? "page" : undefined}
+          className={path === href ? "selected" : ""}
+        >
+          <span aria-hidden>{icon}</span>
+          {label}
+        </Link>
+      ))}
+    </nav>
+  );
+}
