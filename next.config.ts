@@ -8,9 +8,14 @@ export default function config(phase: string): NextConfig {
     ...(origins.length
       ? {
           allowedDevOrigins: origins,
-          experimental: { serverActions: { allowedOrigins: origins } },
         }
       : {}),
+    experimental: {
+      // Use the TypeScript 5.9 compiler API; keep full build-time type checking.
+      // Avoid child-CLI output parsing failures in restricted build environments.
+      useTypeScriptCli: false,
+      ...(origins.length ? { serverActions: { allowedOrigins: origins } } : {}),
+    },
     async headers() {
       return [
         {

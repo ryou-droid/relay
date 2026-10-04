@@ -684,3 +684,10 @@ legend {
     grid-template-columns: 1fr;
   }
 }
+
+.auth .center a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+}

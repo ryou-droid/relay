@@ -71,6 +71,11 @@ export default function AuthForm({
         )}
         <button>{signup ? "登録する" : "ログイン"}</button>
       </form>
+      {!signup && (
+        <p className="center">
+          <Link href="/forgot-password">パスワードを忘れた方</Link>
+        </p>
+      )}
       <p className="center">
         <Link href={signup ? "/login" : "/register"}>
           {signup ? "ログインへ" : "初めての方はこちら"}

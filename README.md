@@ -60,6 +60,7 @@ values ('<user UUID>', '<organization UUID>', '<department UUID>', 'user', 'acti
 ## 実装済み
 
 - メール/パスワード登録・ログイン・メール確認・ログアウト、参加待ち画面
+- パスワード再設定メール、Recoveryリンク検証、新パスワード保存
 - マルチテナントと3権限のDB構造、所属承認前の閲覧遮断
 - 部署内投稿（連絡 / 注意 / 引き継ぎ / 対応依頼）、重要度3段階、必須期限日時
 - 今日・明日・日付指定と時刻指定、日本時間で入力・表示、DBはtimestamptz
@@ -116,3 +117,5 @@ npm test
 リポジトリをインポートし、Next.jsプリセットを選び、同じ2つの環境変数を設定すればデプロイできる構成です。VercelへのデプロイやSupabase本番DBへの適用は行っていません。第1段階のソースコードはGitHubのmainに保存します。
 
 登録エラーの診断は [Vercel版の新規登録エラーの確認](docs/registration-troubleshooting.md) を参照してください。
+
+パスワード再設定を使うには [SupabaseのRecoveryメール設定](docs/password-recovery.md) を行ってください。メールテンプレートは `supabase/templates/reset-password.html` です。

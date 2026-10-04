@@ -31,3 +31,11 @@ GitHubのoriginは `https://github.com/ryou-droid/relay.git`。初期確認でre
 - Auth用の制限付きDBロールで実SQLの登録トリガーを実行。正常入力でprofilesを作成し、必須メタデータ欠落・空文字・長さ超過でAuthユーザーもロールバックすることを確認。診断マイグレーションの再適用と読み取り専用診断SQLも検証。
 - build・TypeScript・lint・テストが成功。本番データ、Supabase設定・キー、Vercelデプロイは変更していない。
 - 実際の障害原因はVercel/Supabaseログ未取得のため未確定。診断ログを利用して次の登録試行で特定する。
+
+## パスワード再設定
+
+- ログインからのメール送信画面、token_hashのRecovery検証、新パスワードと確認欄、保存後のログイン画面への遷移を実装。
+- 模擬Auth APIを使い、実際のSupabase SSR SDKのresetPasswordForEmail → verifyOtp → Cookie保存 → getUser → updateUser → global signOutを検証。使用済みリンクの拒否、未知メールの汎用案内、ログの機密情報除外も検証。
+- 長さ・不一致の検査はサーバーで行い、正規のAuthセッションの本人だけを更新。所属や組織データにはアクセスしない。
+- npm run build / typecheck / lint / testが成功。Next.jsのCLI型検査出力がサンドボックスで解析できないため、TypeScript 5.9の公式compiler API方式へ切り替えた。型検査は無効化していない。Origin許可範囲も維持。
+- 実Supabaseのメール配送と実Vercelでの再設定は未実施。docs/password-recovery.mdの手順でReset PasswordメールテンプレートとSite URLを設定して確認する。キー変更・DB変更・デプロイ操作は実施していない。
