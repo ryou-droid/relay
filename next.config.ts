@@ -16,6 +16,13 @@ export default function config(phase: string): NextConfig {
       useTypeScriptCli: false,
       ...(origins.length ? { serverActions: { allowedOrigins: origins } } : {}),
     },
+    async redirects() {
+      return [
+        { source: "/posts/:path*", destination: "/app/posts/:path*", permanent: false },
+        { source: "/history", destination: "/app/history", permanent: false },
+        { source: "/me", destination: "/app/me", permanent: false },
+      ];
+    },
     async headers() {
       return [
         {

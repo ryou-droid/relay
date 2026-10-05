@@ -8,9 +8,9 @@ Safariで https://supabase.com/dashboard を開きます。Relay専用の空の�
 
 ## 2. DBを作る
 
-GitHubの `supabase/migrations/202610040001_relay.sql` を開き、Raw表示の全文をコピーします。Supabaseの **SQL Editor → New query** に貼り付け、**Run** を押します。初回に1度だけ実行します。続いて `supabase/migrations/202610040002_registration_diagnostics.sql` も実行します（登録時のDBエラー診断ログ用）。
+GitHubの `supabase/migrations/202610040001_relay.sql` を開き、Raw表示の全文をコピーします。Supabaseの **SQL Editor → New query** に貼り付け、**Run** を押します。初回に1度だけ実行します。続いて `supabase/migrations/202610040002_registration_diagnostics.sql` も実行します（登録時のDBエラー診断ログ用）。続いて `supabase/migrations/202610050001_admin.sql` を実行します（管理・承認機能）。
 
-- このSQLが10テーブル、RLS、登録トリガー、操作用RPCを作ります。
+- これらのSQLが一般機能・管理機能のテーブル、RLS、登録トリガー、操作用RPCを作ります。
 - `supabase/config.toml` はCLI用なので、管理画面へ貼り付けません。
 - `supabase/setup/test-membership.sql` は後の手順7で使用します。
 
@@ -104,3 +104,5 @@ Relayへ戻り、**所属状況を再確認** を押すとホームが開きま�
 4. Portsの3000をPrivateのまま開き直し、古いタブを閉じてログイン・新規登録を再送信します。
 
 この設定は `CODESPACES=true`、`CODESPACE_NAME`、`GITHUB_CODESPACES_PORT_FORWARDING_DOMAIN`（省略時app.github.dev）を使用します。キーの変更は不要です。別ポートや別CodespaceのURLでは送信できません。`proxy.ts`でOrigin/Hostを書き換えず、Next.js自身のCSRF検証を維持します。
+
+管理者機能を使う場合は [管理者の設定とiPhone確認手順](admin.md) のSQL適用・最初の管理者設定へ進んでください。

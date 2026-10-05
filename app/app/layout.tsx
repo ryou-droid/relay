@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { session } from "@/lib/session";
 import Nav from "@/components/nav";
+import { isAdminRole } from "@/lib/admin-access.mjs";
 export const dynamic = "force-dynamic";
 
 export default async function MemberLayout({
@@ -16,11 +17,12 @@ export default async function MemberLayout({
   return (
     <div className="shell">
       <header className="header">
-        <Link className="brand" href="/">
+        <Link className="brand" href="/app">
           Relay<span className="brand-dot">●</span>
         </Link>
         <div className="header-right">
           <span className="department">{department}</span>
+          {isAdminRole(membership!.role) && <Link className="admin-entry" href="/admin">管理</Link>}
           <details className="notifications">
             <summary aria-label="通知">
               <svg

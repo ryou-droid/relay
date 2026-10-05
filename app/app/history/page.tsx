@@ -40,7 +40,7 @@ export default async function History({
         {tabs.map(([v, l]) => (
           <Link
             className={tab === v ? "active" : ""}
-            href={`/history?tab=${v}`}
+            href={`/app/history?tab=${v}`}
             key={v}
           >
             {l}

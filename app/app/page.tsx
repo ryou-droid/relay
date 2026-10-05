@@ -57,7 +57,7 @@ export default async function Home({
           <h1>今日の引き継ぎ</h1>
           <p>確認と対応を、ひとつずつ。</p>
         </div>
-        <Link className="button desktop-create" href="/posts/new">
+        <Link className="button desktop-create" href="/app/posts/new">
           ＋ 新しく投稿
         </Link>
       </div>
@@ -76,7 +76,7 @@ export default async function Home({
         {categories.map(([key, label]) => (
           <Link
             key={key}
-            href={`/?category=${key}`}
+            href={`/app?category=${key}`}
             className={category === key ? "active" : ""}
           >
             {label}
@@ -101,7 +101,7 @@ export default async function Home({
           <span>✓</span>
           <h2>表示する投稿はありません</h2>
           <p>必要な連絡や引き継ぎを投稿しましょう。</p>
-          <Link href="/posts/new">新しく投稿する →</Link>
+          <Link href="/app/posts/new">新しく投稿する →</Link>
         </div>
       )}
     </>

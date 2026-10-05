@@ -4,10 +4,12 @@ export default function AuthForm({
   signup,
   error,
   message,
+  invite,
 }: {
   signup?: boolean;
   error?: string;
   message?: string;
+  invite?: string;
 }) {
   return (
     <main className="auth">
@@ -59,6 +61,10 @@ export default function AuthForm({
         </label>
         {signup && (
           <>
+            <label>
+              招待コード（組織の管理者から受け取った場合）
+              <input name="invitation_code" defaultValue={invite || ""} maxLength={36} autoComplete="off" autoCapitalize="none" spellCheck={false} />
+            </label>
             <label>
               所属予定部署
               <input name="planned_department" required maxLength={100} />

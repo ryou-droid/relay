@@ -1,6 +1,6 @@
 # Relayをホーム画面から使う
 
-RelayはNext.jsの `app/manifest.ts` によるWeb App Manifest、Apple用metaタグ、192/512pxのPNG・maskableアイコン・180px Appleアイコン・faviconに対応しています。名前はRelay、起動URLは `/`、表示はstandalone、テーマは青 `#2563eb`、背景はUIと同じ `#f5f7fb` です。アイコンの原稿は `public/icons/relay.svg` です。
+RelayはNext.jsの `app/manifest.ts` によるWeb App Manifest、Apple用metaタグ、192/512pxのPNG・maskableアイコン・180px Appleアイコン・faviconに対応しています。名前はRelay、起動URLは `/app`、表示はstandalone、テーマは青 `#2563eb`、背景はUIと同じ `#f5f7fb` です。アイコンの原稿は `public/icons/relay.svg` です。
 
 ## iPhone / iPad
 

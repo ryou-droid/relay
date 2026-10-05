@@ -55,7 +55,7 @@ export default async function Detail({
   const pageError = (await searchParams).error;
   return (
     <>
-      <Link className="back" href="/">
+      <Link className="back" href="/app">
         ← ホームへ
       </Link>
       <DetailRead id={id} />
@@ -145,7 +145,7 @@ export default async function Detail({
                 対応が開始されたため、この投稿は編集できません。
               </p>
             ) : (
-              <Link href={`/posts/${id}/edit`}>投稿を編集</Link>
+              <Link href={`/app/posts/${id}/edit`}>投稿を編集</Link>
             )}
             <form action={postAction}>
               <input type="hidden" name="id" value={id} />

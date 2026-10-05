@@ -55,11 +55,12 @@ test("Auth trigger works with restricted Auth role; invalid metadata rolls back 
   const db = new PGlite();
   try {
     await db.exec(
-      `create role anon; create role authenticated; create role supabase_auth_admin; create schema auth; create table auth.users(id uuid primary key,raw_user_meta_data jsonb);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema auth to supabase_auth_admin;grant insert,select on auth.users to supabase_auth_admin;`,
+      `create role anon; create role authenticated; create role supabase_auth_admin; create schema auth; create table auth.users(id uuid primary key,raw_user_meta_data jsonb,email text,email_confirmed_at timestamptz);create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;grant usage on schema auth to supabase_auth_admin;grant insert,select on auth.users to supabase_auth_admin;`,
     );
     for (const file of [
       "202610040001_relay.sql",
       "202610040002_registration_diagnostics.sql",
+      "202610050001_admin.sql",
     ]) {
       await db.exec(
         await readFile(
@@ -86,7 +87,7 @@ test("Auth trigger works with restricted Auth role; invalid metadata rolls back 
       position: "社員",
       role: "organization_admin",
     };
-    await db.query("insert into auth.users values($1,$2)", [id(1), good]);
+    await db.query("insert into auth.users(id,raw_user_meta_data) values($1,$2)", [id(1), good]);
     for (const [n, metadata, state] of [
       [2, { planned_department: "部署", position: "社員" }, "23502"],
       [3, { ...good, full_name: "" }, "23514"],
@@ -94,7 +95,7 @@ test("Auth trigger works with restricted Auth role; invalid metadata rolls back 
       [5, { ...good, position: null }, "23502"],
     ]) {
       await assert.rejects(
-        db.query("insert into auth.users values($1,$2)", [id(n), metadata]),
+        db.query("insert into auth.users(id,raw_user_meta_data) values($1,$2)", [id(n), metadata]),
         (error) => error.code === state,
       );
       assert.equal(

@@ -2,10 +2,10 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 const links = [
-  ["/", "⌂", "ホーム"],
-  ["/posts/new", "＋", "投稿"],
-  ["/history", "◷", "履歴"],
-  ["/me", "○", "マイページ"],
+  ["/app", "⌂", "ホーム"],
+  ["/app/posts/new", "＋", "投稿"],
+  ["/app/history", "◷", "履歴"],
+  ["/app/me", "○", "マイページ"],
 ];
 export default function Nav() {
   const path = usePathname();

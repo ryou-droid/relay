@@ -7,7 +7,7 @@ test("tenant isolation, membership gates, privacy, lifecycle and audit", async (
   const db = new PGlite();
   try {
     await db.exec(
-      `create role anon; create role authenticated; create schema auth; create table auth.users(id uuid primary key,raw_user_meta_data jsonb); create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$; grant usage on schema public,auth to authenticated; grant execute on function auth.uid() to authenticated;`,
+      `create role anon; create role authenticated; create schema auth; create table auth.users(id uuid primary key,raw_user_meta_data jsonb,email text,email_confirmed_at timestamptz); create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$; grant usage on schema public,auth to authenticated; grant execute on function auth.uid() to authenticated;`,
     );
     await db.exec(
       await readFile(
@@ -18,9 +18,12 @@ test("tenant isolation, membership gates, privacy, lifecycle and audit", async (
         "utf8",
       ),
     );
+    for (const file of ["202610040002_registration_diagnostics.sql", "202610050001_admin.sql"]) {
+      await db.exec(await readFile(new URL("../supabase/migrations/" + file, import.meta.url), "utf8"));
+    }
     const uid = (n) => `00000000-0000-0000-0000-${String(n).padStart(12, "0")}`;
     for (let n = 1; n <= 5; n++)
-      await db.query("insert into auth.users values($1,$2)", [
+      await db.query("insert into auth.users(id,raw_user_meta_data) values($1,$2)", [
         uid(n),
         {
           full_name: "User " + n,

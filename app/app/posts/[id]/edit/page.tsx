@@ -16,7 +16,7 @@ export default async function Edit({
     .eq("id", id)
     .maybeSingle();
   if (!post) notFound();
-  if (post.author_id !== user.id || post.accepted_at) redirect(`/posts/${id}`);
+  if (post.author_id !== user.id || post.accepted_at) redirect(`/app/posts/${id}`);
   const [m, a] = await Promise.all([
     db.rpc("department_members"),
     db.from("post_assignees").select("user_id").eq("post_id", id),

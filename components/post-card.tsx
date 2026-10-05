@@ -16,7 +16,7 @@ export default function PostCard({
   const overdue =
     post.status !== "completed" && new Date(post.due_at) < new Date();
   return (
-    <Link href={`/posts/${post.id}`} className="post-card">
+    <Link href={`/app/posts/${post.id}`} className="post-card">
       <div className="card-top">
         <span className={`kind ${post.priority === "high" ? "high" : ""}`}>
           {kinds[post.kind]}

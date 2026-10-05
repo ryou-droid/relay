@@ -17,7 +17,7 @@ export async function login(f: FormData) {
   });
   if (error)
     fail("/login", "メールアドレスまたはパスワードを確認してください。");
-  redirect("/");
+  redirect("/app");
 }
 export async function register(f: FormData) {
   // Use the same direct environment references as the Supabase client, including
@@ -49,6 +49,9 @@ export async function register(f: FormData) {
     department = field(f, "planned_department"),
     position = field(f, "position"),
     password = String(f.get("password") || "");
+  const invitation = field(f, "invitation_code");
+  if (invitation && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(invitation))
+    fail("/register", "招待コードを確認してください。");
   if (
     !name ||
     name.length > 80 ||
@@ -65,6 +68,7 @@ export async function register(f: FormData) {
     full_name: name,
     planned_department: department,
     position,
+    ...(invitation ? { invitation_code: invitation } : {}),
   };
   const logFailure = (error: unknown, stage: string) => {
     console.error(
@@ -75,7 +79,7 @@ export async function register(f: FormData) {
           stage,
           error,
           env: registrationEnvironment,
-          redactions: [email, password, name, department, position],
+          redactions: [email, password, name, department, position, invitation],
           metadataLengths: Object.fromEntries(
             Object.entries(metadata).map(([key, value]) => [
               key,
@@ -119,10 +123,20 @@ export async function logout() {
   await db.auth.signOut();
   redirect("/login");
 }
+export async function requestMembership(form: FormData) {
+  const { db, suspended } = await session(false);
+  if (suspended) redirect("/suspended");
+  const invitation = field(form, "invitation_code");
+  if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(invitation))
+    fail("/waiting", "招待コードを確認してください。");
+  const { error } = await db.rpc("request_membership", { p_invitation: invitation });
+  if (error) fail("/waiting", "参加申請できませんでした。コードの有効期限や申請状況を管理者に確認してください。");
+  redirect("/waiting?message=" + encodeURIComponent("参加申請を送信しました。承認をお待ちください。"));
+}
 export async function savePost(f: FormData) {
   const { db } = await session();
   const id = field(f, "id") || null;
-  const path = id ? `/posts/${id}/edit` : "/posts/new";
+  const path = id ? `/app/posts/${id}/edit` : "/app/posts/new";
   const title = field(f, "title"),
     body = field(f, "body");
   const due = field(f, "due_at");
@@ -148,27 +162,27 @@ export async function savePost(f: FormData) {
   });
   if (error) fail(path, error.message);
   revalidatePath("/", "layout");
-  redirect(`/posts/${data}`);
+  redirect(`/app/posts/${data}`);
 }
 export async function postAction(f: FormData) {
   const { db } = await session();
   const id = field(f, "id");
   const action = field(f, "action");
   const { error } = await db.rpc("post_action", { p_id: id, p_action: action });
-  if (error) fail(`/posts/${id}`, error.message);
+  if (error) fail(`/app/posts/${id}`, error.message);
   revalidatePath("/", "layout");
-  redirect(action === "delete" ? "/history" : `/posts/${id}`);
+  redirect(action === "delete" ? "/app/history" : `/app/posts/${id}`);
 }
 export async function addSupplement(f: FormData) {
   const { db } = await session();
   const id = field(f, "id"),
     body = field(f, "body");
   if (!body || Array.from(body).length > 100)
-    fail(`/posts/${id}`, "補足は1〜100文字で入力してください。");
+    fail(`/app/posts/${id}`, "補足は1〜100文字で入力してください。");
   const { error } = await db.rpc("add_supplement", { p_id: id, p_body: body });
-  if (error) fail(`/posts/${id}`, error.message);
-  revalidatePath(`/posts/${id}`);
-  redirect(`/posts/${id}`);
+  if (error) fail(`/app/posts/${id}`, error.message);
+  revalidatePath(`/app/posts/${id}`);
+  redirect(`/app/posts/${id}`);
 }
 export async function deleteSupplement(f: FormData) {
   const { db } = await session();
@@ -176,7 +190,7 @@ export async function deleteSupplement(f: FormData) {
   const { error } = await db.rpc("delete_supplement", {
     s_id: field(f, "supplement_id"),
   });
-  if (error) fail(`/posts/${id}`, error.message);
-  revalidatePath(`/posts/${id}`);
-  redirect(`/posts/${id}`);
+  if (error) fail(`/app/posts/${id}`, error.message);
+  revalidatePath(`/app/posts/${id}`);
+  redirect(`/app/posts/${id}`);
 }

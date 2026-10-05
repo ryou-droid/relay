@@ -691,3 +691,29 @@ legend {
   align-items: center;
   justify-content: center;
 }
+
+/* Administration uses the same mobile-first shell, with a vertical approval picker. */
+.admin-entry{min-height:44px;display:inline-flex;align-items:center;padding:0 12px;border-radius:10px;background:#eff4ff;font-weight:700}
+.admin-shell .content{padding-bottom:max(32px,env(safe-area-inset-bottom))}
+.admin-nav{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 28px}
+.admin-nav a{min-height:48px;display:flex;align-items:center;padding:10px 16px;border:1px solid var(--line);border-radius:12px;background:white}
+.admin-menu-grid{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
+.admin-card{display:flex;flex-direction:column;gap:6px;padding:22px;background:white;border:1px solid var(--line);border-radius:16px;color:var(--ink);min-height:100px;overflow-wrap:anywhere}
+.admin-card strong{font-size:20px}.admin-card span{color:var(--muted)}
+.approval-list,.admin-list{display:grid;gap:16px;margin:20px 0}
+.admin-list .panel{margin:0}.admin-list .panel p{overflow-wrap:anywhere}
+.approval-form{max-width:640px;padding-bottom:16px}
+.approval-form fieldset{padding:0;border:0;margin:24px 0}
+.approval-form legend{font-size:18px;font-weight:700;margin-bottom:12px}
+.department-picker{display:flex;flex-direction:column;gap:10px;max-height:50svh;overflow-y:auto;padding:4px;overscroll-behavior:contain}
+.department-option{display:flex;align-items:center;gap:14px;min-height:64px;padding:16px;margin:0;border:2px solid var(--line);border-radius:14px;background:white;cursor:pointer;color:var(--ink)}
+.department-option.selected{border-color:var(--blue);background:#eff4ff;color:var(--blue)}
+.admin-shell h1,.admin-shell h2,.department-option span{overflow-wrap:anywhere;min-width:0}
+.department-option input{width:22px;height:22px;flex:none;accent-color:var(--blue);margin:0;padding:0;border:0;background:transparent}
+.department-option span:last-child{margin-left:auto;font-size:24px}
+.approval-submit{width:100%;position:sticky;bottom:max(16px,env(safe-area-inset-bottom));box-shadow:0 4px 16px #17233b18}
+.check-row{display:flex;align-items:center;gap:12px;min-height:48px}.check-row input{width:22px;height:22px;margin:0;accent-color:var(--blue)}
+.invitations summary{cursor:pointer;min-height:48px;font-size:18px;font-weight:700}.invitations form{margin:16px 0}
+.invite-code{overflow-wrap:anywhere;user-select:all}.invitation-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.invitation-row form{margin:0}
+@media(max-width:520px){.header-right{gap:4px;min-width:0}.department{max-width:110px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.admin-entry,.notifications{flex-shrink:0}.admin-shell .brand small{font-size:14px}.admin-shell .header .button{padding:8px 12px}.admin-list select{max-width:100%}}
+@media(max-width:360px){.department{max-width:70px}}
