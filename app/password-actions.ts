@@ -1,6 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { configured, supabase } from "@/lib/supabase";
+import { recoveryCallbackUrl } from "@/lib/recovery-origin.mjs";
 import {
   logRecoveryError,
   missingRecoveryAccount,
@@ -26,9 +27,9 @@ export async function requestPasswordReset(form: FormData) {
   let failure: unknown;
   try {
     const db = await supabase();
-    // Supabase's trusted Site URL + the Reset Password email template define the
-    // destination. Do not trust Origin/Host headers to construct recovery links.
-    const { error } = await db.auth.resetPasswordForEmail(email);
+    const { error } = await db.auth.resetPasswordForEmail(email, {
+      redirectTo: recoveryCallbackUrl(),
+    });
     failure = error;
   } catch (error) {
     failure = error;

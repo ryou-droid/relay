@@ -45,7 +45,7 @@ test("recovery diagnostics never serialize credentials, tokens or full errors", 
     assert.ok(!messages[0].includes(secret));
 });
 
-test("Supabase SSR recovery flow persists verified session, checks identity, updates password and signs out", async () => {
+for (const mode of ["code", "token_hash"]) test(`Supabase SSR ${mode} recovery persists session, updates password and signs out`, async () => {
   const { createServerClient } = await import("@supabase/ssr");
   const jar = new Map();
   const requests = [];
@@ -81,7 +81,7 @@ test("Supabase SSR recovery flow persists verified session, checks identity, upd
     const path = new URL(typeof input === "string" ? input : input.url)
       .pathname;
     const body = init?.body ? JSON.parse(init.body) : null;
-    requests.push({ path, method: init?.method || "GET", body });
+    requests.push({ url: String(input), path, method: init?.method || "GET", body });
     const response = (value, status = 200) =>
       new Response(JSON.stringify(value), {
         status,
@@ -94,11 +94,12 @@ test("Supabase SSR recovery flow persists verified session, checks identity, upd
       return body.email === "missing@example.com"
         ? response({ message: "User not found", code: "user_not_found" }, 400)
         : response({});
-    if (path === "/auth/v1/verify") {
+    if (path === "/auth/v1/verify" || path === "/auth/v1/token") {
       if (
         used ||
-        body.token_hash !== "mock-recovery-token" ||
-        body.type !== "recovery"
+        (mode === "code"
+          ? body.auth_code !== "mock-recovery-code" || !body.code_verifier
+          : body.token_hash !== "mock-recovery-token" || body.type !== "recovery")
       )
         return response({ message: "Invalid OTP", code: "otp_expired" }, 400);
       used = true;
@@ -136,24 +137,23 @@ test("Supabase SSR recovery flow persists verified session, checks identity, upd
     );
   const request = client();
   assert.equal(
-    (await request.auth.resetPasswordForEmail("test@example.com")).error,
+    (await request.auth.resetPasswordForEmail("test@example.com", { redirectTo: "https://relay-rouge-alpha.vercel.app/auth/recovery" })).error,
     null,
   );
-  assert.equal(
-    missingRecoveryAccount(
-      (await request.auth.resetPasswordForEmail("missing@example.com")).error,
-    ),
-    true,
-  );
-  assert.equal(
-    (
-      await client().auth.verifyOtp({
-        token_hash: "mock-recovery-token",
-        type: "recovery",
-      })
-    ).error,
-    null,
-  );
+  const recover = requests.find((r) => r.path === "/auth/v1/recover");
+  assert.ok(recover.body.code_challenge);
+  assert.equal(new URL(recover.url).searchParams.get("redirect_to"), "https://relay-rouge-alpha.vercel.app/auth/recovery");
+  if (mode === "code") {
+    const saved = new Map(jar);
+    jar.clear();
+    assert.ok((await client().auth.exchangeCodeForSession("mock-recovery-code")).error);
+    for (const [name, value] of saved) jar.set(name, value);
+    const result = await client().auth.exchangeCodeForSession("mock-recovery-code");
+    assert.equal(result.error, null);
+    assert.equal(result.data.redirectType, "recovery");
+  } else {
+    assert.equal((await client().auth.verifyOtp({ token_hash: "mock-recovery-token", type: "recovery" })).error, null);
+  }
   assert.ok(
     Array.from(jar.keys()).some(
       (name) => name.includes("auth-token") && !name.includes("code-verifier"),

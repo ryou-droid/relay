@@ -38,4 +38,11 @@ GitHubのoriginは `https://github.com/ryou-droid/relay.git`。初期確認でre
 - 模擬Auth APIを使い、実際のSupabase SSR SDKのresetPasswordForEmail → verifyOtp → Cookie保存 → getUser → updateUser → global signOutを検証。使用済みリンクの拒否、未知メールの汎用案内、ログの機密情報除外も検証。
 - 長さ・不一致の検査はサーバーで行い、正規のAuthセッションの本人だけを更新。所属や組織データにはアクセスしない。
 - npm run build / typecheck / lint / testが成功。Next.jsのCLI型検査出力がサンドボックスで解析できないため、TypeScript 5.9の公式compiler API方式へ切り替えた。型検査は無効化していない。Origin許可範囲も維持。
-- 実Supabaseのメール配送と実Vercelでの再設定は未実施。docs/password-recovery.mdの手順でReset PasswordメールテンプレートとSite URLを設定して確認する。キー変更・DB変更・デプロイ操作は実施していない。
+- 実Supabaseのメール配送と実Vercelでの再設定は未実施。キー変更・DB変更・デプロイ操作は実施していない。
+
+## 標準メールテンプレート対応
+
+- redirectToを明示し、標準ConfirmationURLのcodeをexchangeCodeForSessionで処理するPKCE方式に対応。recovery由来のセッション確認後、固定の/reset-passwordへ遷移。旧token_hash方式も互換対応。
+- 実Supabase SSR SDK＋模擬Auth APIでcode/token_hashの両経路、redirectToとPKCE challengeの送信、Cookie永続化、本人確認、更新、ログアウト、検証Cookieのないブラウザの拒否を確認。
+- 本番URL固定、PreviewはVercel環境変数、開発はlocalhostまたは現在のCodespaceのみ。任意Hostから戻り先を作らない。許可されていないPreview hostnameを拒否するテストを追加。
+- Supabase Authの公開ソースではSite URLと同じscheme/host/portを許可。現在の本番Site URLが正しければテンプレート・Redirect URLsの追加変更は原則不要。別オリジンは許可が必要。実プロジェクト設定と実メール配送は未確認。

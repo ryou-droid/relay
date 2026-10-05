@@ -118,4 +118,4 @@ npm test
 
 登録エラーの診断は [Vercel版の新規登録エラーの確認](docs/registration-troubleshooting.md) を参照してください。
 
-パスワード再設定を使うには [SupabaseのRecoveryメール設定](docs/password-recovery.md) を行ってください。メールテンプレートは `supabase/templates/reset-password.html` です。
+パスワード再設定はSupabaseの標準メールテンプレートに対応しています。[再設定の動作・環境別の戻り先・確認手順](docs/password-recovery.md) を参照してください。本番Site URLが現在のRelay URLなら追加設定は原則不要です。
