@@ -66,6 +66,7 @@ test('actual admin read helper logs the received diagnostics and throws a generi
  const exports={};const logs=[];
  vm.runInNewContext(compiled,{exports,process:{env:{NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:'test-public-key'}},console:{error:(text)=>logs.push(JSON.parse(text))},require:(name)=>{
   if(name==='react')return require(name);
+  if(name==='./server/performance')return {timedQuery:async(_name,work)=>work()};
   if(name==='./server/admin-log.mjs')return {adminFailure};
   if(name==='node:crypto')return {randomUUID:()=> 'test-reference'};
   return {};
@@ -83,6 +84,7 @@ test('organization admin can render the actual /admin page with successful RPC d
  const compiled=ts.transpileModule(await readFile(new URL('../app/admin/page.tsx',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2017,jsx:ts.JsxEmit.ReactJSX,esModuleInterop:true}}).outputText;
  const exports={};let reads=0;
  vm.runInNewContext(compiled,{exports,require:(name)=>{
+  if(name==='@/lib/server/performance')return {startTiming:()=>()=>{},timedQuery:async(_name,work)=>work()};
   if(name==='@/lib/admin')return {adminSession:async()=>({membership:{role:'organization_admin'}}),adminRead:async()=>{reads++;return [];}};
   if(name==='react/jsx-runtime')return require(name);
   return {__esModule:true,default:()=>null};

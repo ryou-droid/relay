@@ -1,3 +1,4 @@
+import { timedQuery } from "@/lib/server/performance";
 import Link from "@/components/navigation-link";
 import { adminSession, adminDepartments, adminRead, type AdminUser } from "@/lib/admin";
 import { createInvitation, manageUser, revokeInvitation } from "@/app/admin/actions";
@@ -8,7 +9,7 @@ export default async function Users({ searchParams }: { searchParams: Promise<{ 
   const { db, user, membership } = context;
   const organizationAdmin = membership!.role === "organization_admin";
   const [{ departments }, members, invitations] = await Promise.all([
-    adminDepartments(), adminRead<AdminUser>(context, "admin_users"), db.from("organization_invitations").select("id,department_id,expires_at").eq("active", true).gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false }),
+    adminDepartments(), adminRead<AdminUser>(context, "admin_users"), timedQuery("admin.invitations", () => db.from("organization_invitations").select("id,department_id,expires_at").eq("active", true).gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false })),
   ]);
   if (invitations.error) throw new Error("ユーザー情報を取得できません。");
   const query = await searchParams;

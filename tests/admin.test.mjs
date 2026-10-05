@@ -44,6 +44,7 @@ test('rendering every actual admin page as a regular user redirects before any m
       return requireAdminSession(async () => ({membership:{role:'user'}, db: new Proxy({}, {get:()=>{throw new Error('Private data accessed');}})}),redirect,organizationOnly);
     };
     vm.runInNewContext(compiled, {exports, require: (name) => {
+      if(name==='@/lib/server/performance')return {startTiming:()=>()=>{},timedQuery:async(_name,work)=>work()};
       if(name==='@/lib/admin') return {adminSession:guard,adminDepartments:()=>guard()};
       if(name==='react' || name==='react/jsx-runtime') return require(name);
       if(name==='next/navigation') return {redirect,notFound:()=>{throw new Error('Unexpected notFound');}};
@@ -61,7 +62,8 @@ test('actual server actions reject regular users before RPC execution', async ()
   const redirect = (url) => {throw new Error(`REDIRECT:${url}`);};
   const exports = {};
   vm.runInNewContext(compiled,{exports,console,require:(name)=>{
-    if(name==='@/lib/admin') return {adminSession:(only)=>requireAdminSession(async()=>({membership:{role:'user'}}),redirect,only)};
+    if(name==='@/lib/server/performance')return {startTiming:()=>()=>{},timedQuery:async(_name,work)=>work()};
+      if(name==='@/lib/admin') return {adminSession:(only)=>requireAdminSession(async()=>({membership:{role:'user'}}),redirect,only)};
     if(name==='next/navigation')return {redirect};
     if(name==='next/cache')return {revalidatePath:()=>{throw new Error('Unexpected write');}};
     throw new Error('Unexpected import');
@@ -102,7 +104,7 @@ test('real SQL: organization/dept scopes, invitation-bound approval, suspension,
       create table auth.users(id uuid primary key,email text,email_confirmed_at timestamptz,raw_user_meta_data jsonb);
       create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
       grant usage on schema public,auth to authenticated;grant execute on function auth.uid() to authenticated;`);
-    for (const migration of ['202610040001_relay.sql','202610040002_registration_diagnostics.sql','202610050001_admin.sql','202610050002_admin_read_only.sql']) {
+    for (const migration of ['202610040001_relay.sql','202610040002_registration_diagnostics.sql','202610050001_admin.sql','202610050002_admin_read_only.sql','202610050003_feed_performance.sql']) {
       await db.exec(await readFile(new URL(`../supabase/migrations/${migration}`,import.meta.url),'utf8'));
     }
     const addUser = async (n, invitation, confirmed=true) => db.query('insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values($1,$2,$3,$4)',[

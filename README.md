@@ -28,7 +28,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 ### Supabaseの設定
 
 1. 新しい開発用Supabaseプロジェクトを用意します。既存DBへは適用前にスキーマを確認してください。
-2. SQL Editorで `supabase/migrations/202610040001_relay.sql`、続いて `supabase/migrations/202610040002_registration_diagnostics.sql`、`supabase/migrations/202610050001_admin.sql`、`supabase/migrations/202610050002_admin_read_only.sql` を順に実行します。またはSupabase CLIを導入済みなら `supabase db push` で適用します。001は初回適用専用です。既存のRelay DBには未適用のマイグレーションだけ追加適用してください。管理機能には今回の `202610050001_admin.sql` が必要です。
+2. SQL Editorで `supabase/migrations/202610040001_relay.sql`、続いて `supabase/migrations/202610040002_registration_diagnostics.sql`、`supabase/migrations/202610050001_admin.sql`、`supabase/migrations/202610050002_admin_read_only.sql`、`supabase/migrations/202610050003_feed_performance.sql` を順に実行します。またはSupabase CLIを導入済みなら `supabase db push` で適用します。001は初回適用専用です。既存のRelay DBには未適用のマイグレーションだけ追加適用してください。管理機能には今回の `202610050001_admin.sql` が必要です。
 3. AuthenticationでEmail / Passwordを有効化し、メール確認を有効にしてください。最低パスワード長は8文字以上を推奨します。
 4. Site URLを開発時は `http://localhost:3000` に設定します。実運用URL・許可するRedirect URLは運用時に人間が設定してください。
 5. Authentication → Email Templates → Confirm signupの確認リンクを以下に設定してください。
@@ -126,4 +126,6 @@ npm test
 
 管理画面の読み込み失敗は [管理RPCの25006修正と安全な診断](docs/admin-troubleshooting.md) を参照してください。管理SQLを適用済みの場合は新しい `202610050002_admin_read_only.sql` だけを追加適用します。
 
-画面遷移の先読み、読み込みUI、リクエスト単位の取得共有については [画面遷移の改善](docs/navigation-performance.md) を参照してください。Supabaseの追加設定やSQL適用は不要です。
+画面遷移の先読み、読み込みUI、リクエスト単位の取得共有については [画面遷移の改善](docs/navigation-performance.md) を参照してください。認証設定の変更は不要です。一覧取得の速度改善には、下記の新しいSQLを追加適用してください。
+
+一覧の30件取得・即時カテゴリ切替を有効にするには、新しい `supabase/migrations/202610050003_feed_performance.sql` をSQL Editorで一度実行してください。未適用の間は既存の取得方式を使用します。[一覧性能と計測の手順](docs/feed-performance.md) を参照してください。

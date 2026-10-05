@@ -1,5 +1,6 @@
 import { cache } from "react";
 import "server-only";
+import { timedQuery } from "./server/performance";
 import { redirect } from "next/navigation";
 import { session } from "./session";
 import { requireAdminSession } from "./admin-access.mjs";
@@ -10,10 +11,14 @@ export async function adminSession(organizationOnly = false): Promise<Awaited<Re
   return requireAdminSession(session, redirect, organizationOnly);
 }
 
-export async function adminRead<T>(context: Awaited<ReturnType<typeof adminSession>>, rpc: "admin_approvals" | "admin_users" | "admin_notices"): Promise<T[]> {
+export async function adminRead<T>(context: Awaited<ReturnType<typeof adminSession>>, rpc: "admin_approvals" | "admin_users" | "admin_notices" | "admin_dashboard"): Promise<T[]> {
   let failure: unknown;
   try {
-    const { data, error } = await context.db.rpc(rpc);
+    let { data, error } = await timedQuery(`admin.${rpc}`, () => context.db.rpc(rpc));
+    if (rpc === "admin_dashboard" && error?.code === "PGRST202") {
+      const fallback = await timedQuery("admin.dashboard_legacy", () => context.db.rpc("admin_approvals"));
+      data = [{ pending_count: fallback.data?.length || 0 }]; error = fallback.error;
+    }
     if (!error) return (data || []) as T[];
     failure = error;
   } catch (error) {
@@ -44,7 +49,7 @@ export const adminDepartments = cache(async (activeOnly = false) => {
   let query = context.db.from("departments").select("id,name,active")
     .eq("organization_id", context.membership!.organization_id).order("name");
   if (activeOnly) query = query.eq("active", true);
-  const { data, error } = await query;
+  const { data, error } = await timedQuery("admin.departments", () => query);
   if (error) throw new Error("部署を取得できません。管理用SQLの適用を確認してください。");
   return { ...context, departments: (data || []) as Department[] };
 });

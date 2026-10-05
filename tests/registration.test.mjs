@@ -61,7 +61,7 @@ test("Auth trigger works with restricted Auth role; invalid metadata rolls back 
       "202610040001_relay.sql",
       "202610040002_registration_diagnostics.sql",
       "202610050001_admin.sql",
-      "202610050002_admin_read_only.sql",
+      "202610050002_admin_read_only.sql", "202610050003_feed_performance.sql",
     ]) {
       await db.exec(
         await readFile(

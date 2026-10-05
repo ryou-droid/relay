@@ -1,3 +1,4 @@
+import { readPostSummaries } from "@/lib/server/feed-data";
 import Link from "@/components/navigation-link";
 import { notFound } from "next/navigation";
 import { session } from "@/lib/session";
@@ -32,7 +33,7 @@ export default async function Detail({
   const { db, user } = await session();
   const [postResult, s, m, supp, logs] = await Promise.all([
     db.from("posts").select("*").eq("id", id).maybeSingle(),
-    db.rpc("post_summaries"),
+    readPostSummaries(db, [id]),
     db.rpc("department_members"),
     db.from("supplements").select("*").eq("post_id", id).order("created_at"),
     db

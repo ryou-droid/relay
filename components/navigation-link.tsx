@@ -1,7 +1,7 @@
 "use client";
 import Link, { useLinkStatus } from "next/link";
 import { useRef, type ComponentProps } from "react";
-import { beginNavigationFeedback } from "@/lib/navigation-feedback";
+import { beginNavigationFeedback, noteNavigationTap } from "@/lib/navigation-feedback";
 
 function Feedback() {
   const { pending } = useLinkStatus();
@@ -16,6 +16,7 @@ export default function NavigationLink({ children, ...props }: Omit<ComponentPro
     onPointerDown={event => {
       props.onPointerDown?.(event);
       if (event.defaultPrevented || event.button !== 0) return;
+      noteNavigationTap();
       pointer.current = { x: event.clientX, y: event.clientY };
       event.currentTarget.setAttribute("data-pressed", "true");
     }}

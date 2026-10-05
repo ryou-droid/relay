@@ -24,6 +24,7 @@ test('session deduplicates within a request, loads independent data concurrently
   const exports = {};
   vm.runInNewContext(compiled, { exports, require: name => {
     if (name === 'react') return react;
+    if (name === './server/performance') return { timedQuery: async (_name, work) => work() };
     if (name === './supabase') return { configured: () => true, supabase: async () => db };
     if (name === 'next/navigation') return { redirect: path => { throw new Error(path); } };
     throw new Error(name);
@@ -72,6 +73,7 @@ test('actual detail starts all five scoped reads together and rejects invisible 
     if (name === '@/lib/session') return { session: async () => { if (!authorized) throw new Error('/waiting'); return { db, user: { id: 'me' } }; } };
     if (name === 'next/navigation') return { notFound: () => { throw new Error('NOT_FOUND'); } };
     if (name === 'react/jsx-runtime') return require(name);
+    if (name === '@/lib/server/feed-data') return { readPostSummaries: db => db.rpc('post_summaries_for') };
     if (name === '@/lib/domain') return { kinds: {}, priorities: {}, statuses: {}, deadline: () => '' };
     return { __esModule: true, default: () => null };
   } });
@@ -150,25 +152,87 @@ test('navigation feedback is synchronous, survives pointer-up and clears on comp
   assert.equal(prevented, true); assert.equal(post.getAttribute('data-navigation-intent'), null);
 });
 
-test('actual home empty state has one next action and no redundant notice/catchphrase cards', async () => {
+test('actual home uses one bounded feed RPC plus notices in parallel, with a server gate before rendering', async () => {
   const compiled = ts.transpileModule(await readFile(new URL('../app/app/page.tsx', import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
-  const exports = {}; let notices = [];
+  const exports = {}; let notices = [], gates = 0, reads = [];
+  const pages = Object.fromEntries(['important','overdue','unread','progress','new','today'].map(key => [key,{items:[],next:null}]));
+  const db = { rpc: async name => { reads.push(name); return { data: pages, error: null }; }, from: table => { assert.equal(table,'important_notices'); return { select: () => ({eq: async () => {reads.push('notices');return {data:notices,error:null};}}) }; } };
   vm.runInNewContext(compiled, { exports, require: name => {
-    if (name === '@/lib/session') return { session: async () => ({ db: { rpc: async () => ({ data: [], error: null }), from: table => { const query = { select: () => query, order: async () => ({ data: [], error: null }), eq: async () => ({ data: notices, error: null }) }; assert.ok(['posts', 'important_notices'].includes(table)); return query; } } }) };
+    if (name === '@/lib/session') return { session: async () => { gates++; return { db }; } };
+    if (name === '@/lib/server/feed-data') return { readHomeFeed: db => db.rpc('home_feed') };
+    if (name === '@/lib/supabase') return { configured: () => true, supabase: async () => db };
+    if (name === '@/lib/feed') return { homeFilters: Object.keys(pages).map(key => [key,key]) };
+    if (name === '@/lib/server/performance') return { timedQuery: async (_name,work) => work(), startTiming: () => () => {} };
+    if (name === 'node:crypto') return { randomUUID: () => 'request-local-key' };
     if (name === 'react/jsx-runtime') return require(name);
-    return { __esModule: true, default: 'a' };
+    return { __esModule: true, default: name === '@/components/feed-list' ? 'feed-list' : 'a' };
   } });
   const props = { searchParams: Promise.resolve({}) };
   const inspect = tree => {
-    const result = { text: [], notices: 0, actions: [] };
-    const visit = node => { if (Array.isArray(node)) return node.forEach(visit); if (typeof node === 'string') { result.text.push(node); return; } if (!node?.props) return; if (node.props.className === 'important-notice') result.notices++; if (node.props.className === 'button' && node.props.href === '/app/posts/new') result.actions.push(node.props.href); visit(node.props.children); };
+    const result = { text: [], notices: 0, feed: null };
+    const visit = node => { if (Array.isArray(node)) return node.forEach(visit); if (typeof node === 'string') { result.text.push(node); return; } if (!node?.props) return; if (node.props.className === 'important-notice') result.notices++; if(node.type==='feed-list')result.feed=node.props; visit(node.props.children); };
     visit(tree); return result;
   };
   const empty = inspect(await exports.default(props));
-  assert.equal(empty.notices, 0); assert.equal(empty.actions.length, 1);
-  assert.ok(empty.text.includes('今日の引き継ぎ')); assert.ok(empty.text.includes('投稿はありません'));
-  assert.ok(!empty.text.join('').includes('ひとつずつ')); assert.ok(!empty.text.join('').includes('投稿しましょう'));
+  assert.equal(empty.notices, 0); assert.equal(empty.feed.initialPages,pages); assert.equal(empty.feed.initialFilter,'new');
+  assert.equal(gates,1); assert.deepEqual(reads,['home_feed','notices']);
   notices = [{ id: 'n', department_id: null, body: '実際の重要連絡' }];
   const active = inspect(await exports.default(props));
   assert.equal(active.notices, 1); assert.ok(active.text.includes('実際の重要連絡'));
+});
+
+test('actual category buttons select urgently without RSC navigation or a request while the snapshot is fresh', async () => {
+  const compiled = ts.transpileModule(await readFile(new URL('../components/feed-list.tsx', import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
+  const exports = {}, states = [], refs = [], effects = [], calls = [], urls = [];
+  let stateIndex=0, refIndex=0, first=true, clock=1000, resolve;
+  const filters=[['important','重要連絡'],['overdue','期限超過'],['unread','未確認'],['progress','対応中'],['new','新着'],['today','本日完了']];
+  const router={refresh:()=>{throw new Error('tab selection must not fetch RSC');}};
+  vm.runInNewContext(compiled,{exports,Date:{now:()=>clock},Map,Set,Array,document:{visibilityState:'visible',addEventListener:()=>{},removeEventListener:()=>{}},window:{history:{replaceState:(_state,_title,url)=>urls.push(url)}},require:name=>{
+    if(name==='react')return {useState:initial=>{const i=stateIndex++;if(first)states[i]=initial;return [states[i],value=>{states[i]=typeof value==='function'?value(states[i]):value;}];},useRef:current=>{const i=refIndex++;if(first)refs[i]={current};return refs[i];},useEffect:callback=>{if(first)effects.push(callback);}};
+    if(name==='react-dom')return {flushSync:callback=>callback()};
+    if(name==='react/jsx-runtime')return require(name);
+    if(name==='next/navigation')return {useRouter:()=>router};
+    if(name==='@/lib/feed')return {homeFilters:filters,historyFilters:[['completed','完了した投稿'],['mine','自分の投稿'],['involved','関わった投稿']]};
+    if(name==='@/app/feed-actions')return {loadFeed:(view,filter,cursor)=>{assert.equal(states[0],filter,'selection commits before the async fetch');calls.push({view,filter,cursor});return new Promise(done=>{resolve=done;});}};
+    return {__esModule:true,default:name==='@/components/route-skeleton'?'skeleton':'card'};
+  }});
+  const pages=Object.fromEntries(filters.map(([key])=>[key,{items:[],next:null}]));
+  const props={view:'home',initialPages:pages,initialFilter:'new'};
+  const render=()=>{stateIndex=0;refIndex=0;const tree=exports.default(props);if(first){effects.forEach(effect=>effect());first=false;}return tree;};
+  const buttons=tree=>{const result=[];const visit=node=>{if(Array.isArray(node))return node.forEach(visit);if(!node?.props)return;if(node.type==='button')result.push(node);visit(node.props.children);};visit(tree);return result;};
+  buttons(render()).find(button=>button.props.children==='重要連絡').props.onClick();
+  assert.equal(states[0],'important');assert.equal(calls.length,0);assert.equal(urls.at(-1),'/app?category=important');
+  assert.equal(buttons(render()).find(button=>button.props.children==='重要連絡').props['aria-pressed'],true);
+  clock+=31000;
+  buttons(render()).find(button=>button.props.children==='未確認').props.onClick();
+  assert.equal(states[0],'unread');assert.equal(calls.length,1);
+  resolve({items:[],next:null});await new Promise(done=>setImmediate(done));
+  buttons(render()).find(button=>button.props.children==='未確認').props.onClick();
+  assert.equal(calls.length,1,'fresh same category does not refetch');
+});
+
+test('opt-in server timing logs exclude query values, rows and error messages',async()=>{
+ const compiled=ts.transpileModule(await readFile(new URL('../lib/server/performance.ts',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;
+ const exports={},logs=[];
+ vm.runInNewContext(compiled,{exports,Date,process:{env:{RELAY_PERFORMANCE_LOGS:'1'}},console:{info:line=>logs.push(JSON.parse(line))}});
+ await exports.timedQuery('history.feed',async()=>({data:{email:'private@example.test',token:'secret'},error:{message:'private sql'}}));
+ assert.deepEqual(Object.keys(logs[0]).sort(),['elapsed_ms','event','ok','operation']);
+ assert.equal(logs[0].ok,false);assert.ok(!JSON.stringify(logs).includes('private'));assert.ok(!JSON.stringify(logs).includes('secret'));
+});
+
+test('new feed RPC compatibility only handles missing functions, never permission errors',async()=>{
+ const compiled=ts.transpileModule(await readFile(new URL('../lib/server/feed-data.ts',import.meta.url),'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS}}).outputText;
+ const exports={};
+ vm.runInNewContext(compiled,{exports,Date,Intl,Map,require:name=>{
+  if(name==='server-only')return {};
+  if(name==='../feed')return {homeFilters:[['new','新着']]};
+  if(name==='./performance')return {timedQuery:async(_name,work)=>work()};
+  throw new Error(name);
+ }});
+ const denied={code:'42501',message:'permission denied'};
+ const blocked={rpc:async()=>({data:null,error:denied}),from:()=>{throw new Error('permission must not be bypassed');}};
+ assert.equal((await exports.readHomeFeed(blocked)).error,denied);
+ let reads=0;
+ const beforeMigration={rpc:async name=>name==='home_feed'?{data:null,error:{code:'PGRST202'}}:{data:[],error:null},from:()=>{reads++;const query={select:()=>query,order:()=>query,then:resolve=>Promise.resolve({data:[],error:null}).then(resolve)};return query;}};
+ const fallback=await exports.readHomeFeed(beforeMigration);assert.equal(fallback.error,null);assert.equal(fallback.data.new.items.length,0);assert.equal(reads,1);
 });

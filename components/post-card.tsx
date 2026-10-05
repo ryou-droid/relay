@@ -1,16 +1,16 @@
+import type { FeedPost } from "@/lib/feed";
 import Link from "@/components/navigation-link";
 import {
   kinds,
   statuses,
   deadline,
-  type Post,
   type Summary,
 } from "@/lib/domain";
 export default function PostCard({
   post,
   summary,
 }: {
-  post: Post;
+  post: FeedPost;
   summary?: Summary;
 }) {
   const overdue =

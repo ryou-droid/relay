@@ -1,106 +1,35 @@
+import { readHomeFeed } from "@/lib/server/feed-data";
+import { randomUUID } from "node:crypto";
 import Link from "@/components/navigation-link";
+import FeedList from "@/components/feed-list";
+import { configured, supabase } from "@/lib/supabase";
 import { session } from "@/lib/session";
-import PostCard from "@/components/post-card";
-import type { Post, Summary } from "@/lib/domain";
-const categories = [
-  ["important", "重要連絡"],
-  ["overdue", "期限超過"],
-  ["unread", "未確認"],
-  ["progress", "対応中"],
-  ["new", "新着"],
-  ["today", "本日完了"],
-];
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: Promise<{ category?: string }>;
-}) {
-  const { db } = await session();
-  const category = (await searchParams).category || "new";
-  const [p, s, n] = await Promise.all([
-    db.from("posts").select("*").order("created_at", { ascending: false }),
-    db.rpc("post_summaries"),
-    db
-      .from("important_notices")
-      .select("id,body,department_id")
-      .eq("active", true),
-  ]);
-  if (p.error || s.error || n.error)
-    throw new Error("データ取得に失敗しました");
-  const summaries = (s.data || []) as Summary[];
-  const now = new Date();
-  const today = new Intl.DateTimeFormat("sv-SE", {
-    timeZone: "Asia/Tokyo",
-  }).format(now);
-  const posts = (p.data as Post[]).filter((post) => {
-    const summary = summaries.find((x) => x.post_id === post.id);
-    if (category === "today")
-      return (
-        post.status === "completed" &&
-        post.completed_at &&
-        new Intl.DateTimeFormat("sv-SE", { timeZone: "Asia/Tokyo" }).format(
-          new Date(post.completed_at),
-        ) === today
-      );
-    if (post.status === "completed") return false;
-    if (category === "important") return post.priority === "high";
-    if (category === "overdue") return new Date(post.due_at) < now;
-    if (category === "unread") return !summary?.is_read;
-    if (category === "progress") return post.status === "in_progress";
-    return true;
-  });
-  return (
-    <>
-      <div className="page-heading">
-        <div>
-          <h1>今日の引き継ぎ</h1>
-        </div>
-        <Link className="button desktop-create" href="/app/posts/new">
-          ＋ 新しく投稿
-        </Link>
-      </div>
-      {Boolean(n.data?.length) && <section className="important-stack" aria-label="重要連絡">
-        {[false, true].map((dept) => {
-          const notice = n.data?.find((x) => Boolean(x.department_id) === dept);
-          if (!notice) return null;
-          return (
-            <div className="important-notice" key={String(dept)}>
-              <strong>{dept ? "部署" : "組織"}重要連絡</strong>
-              <p>{notice.body}</p>
-            </div>
-          );
-        })}
-      </section>}
-      <nav className="categories" aria-label="投稿カテゴリ">
-        {categories.map(([key, label]) => (
-          <Link
-            key={key}
-            href={`/app?category=${key}`}
-            className={category === key ? "active" : ""}
-          >
-            {label}
-          </Link>
-        ))}
-      </nav>
-      <div className="list-heading">
-        <h2>{categories.find((x) => x[0] === category)?.[1] || "新着"}</h2>
-        <span>{posts.length} 件</span>
-      </div>
-      <div className="post-grid">
-        {posts.map((post) => (
-          <PostCard
-            key={post.id}
-            post={post}
-            summary={summaries.find((x) => x.post_id === post.id)}
-          />
-        ))}
-      </div>
-      {!posts.length && (
-        <div className="empty">
-          <h2>投稿はありません</h2>
-          <Link className="button" href="/app/posts/new">投稿する</Link>
-        </div>
-      )}
-    </>
-  );
+import { homeFilters, type HomePages } from "@/lib/feed";
+import { timedQuery, startTiming } from "@/lib/server/performance";
+export default async function Home({ searchParams }: { searchParams: Promise<{ category?: string }> }) {
+  const finish = startTiming("page.home");
+  if (!configured()) await session();
+  const verified = session();
+  // Reads are scoped by RLS/RPC, and nothing is rendered before the server gate completes.
+  const reading = (async () => {
+    const db = await supabase();
+    const query = await searchParams;
+    const category = homeFilters.some(([key]) => key === query.category) ? query.category! : "new";
+    const [feed, notices] = await Promise.all([
+      readHomeFeed(db),
+      timedQuery("home.notices", () => db.from("important_notices").select("id,body,department_id").eq("active", true)),
+    ]);
+    return { feed, notices, category };
+  })();
+  const [, { feed, notices, category }] = await Promise.all([verified, reading]);
+  if (feed.error || notices.error) throw new Error("一覧を取得できません。DB設定を確認してください。");
+  finish();
+  return <>
+    <div className="page-heading"><h1>今日の引き継ぎ</h1><Link className="button desktop-create" href="/app/posts/new">＋ 新しく投稿</Link></div>
+    {Boolean(notices.data?.length) && <section className="important-stack" aria-label="重要連絡">{[false, true].map(dept => {
+      const notice = notices.data?.find(item => Boolean(item.department_id) === dept);
+      return notice ? <div className="important-notice" key={String(dept)}><strong>{dept ? "部署" : "組織"}重要連絡</strong><p>{notice.body}</p></div> : null;
+    })}</section>}
+    <FeedList key={randomUUID()} view="home" initialPages={feed.data as HomePages} initialFilter={category} />
+  </>;
 }

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 export const configured = () =>
@@ -5,7 +6,7 @@ export const configured = () =>
     process.env.NEXT_PUBLIC_SUPABASE_URL &&
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
   );
-export async function supabase() {
+export const supabase = cache(async () => {
   const store = await cookies();
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -25,4 +26,4 @@ export async function supabase() {
       },
     },
   );
-}
+});

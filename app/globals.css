@@ -252,7 +252,7 @@ legend {
 .categories::-webkit-scrollbar {
   display: none;
 }
-.categories a {
+.categories a, .categories button {
   white-space: nowrap;
   flex-shrink: 0;
   min-height: 44px;
@@ -741,3 +741,7 @@ button:active, summary:active { filter:brightness(.9); }
 .responsive-link.button[data-pressed="true"], .responsive-link.button[data-navigation-intent="true"], .categories .active[data-pressed="true"], .categories .active[data-navigation-intent="true"] { background-color:#1d4ed8; }
 
 .responsive-link.button.secondary:is(:active, [data-pressed="true"], [data-navigation-intent="true"]), .responsive-link.button.secondary:has([data-pending="true"]) { color:white; }
+
+.feed-more { display:flex; justify-content:center; margin:24px 0; }
+.categories button:active { background:#e8f0ff; color:var(--blue); }
+.categories button.active:active { background:#1d4ed8; color:white; }

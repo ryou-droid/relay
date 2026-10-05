@@ -1,3 +1,4 @@
+import { timedQuery } from "./server/performance";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 import { configured, supabase } from "./supabase";
@@ -7,14 +8,14 @@ const loadSession = cache(async () => {
   const db = await supabase();
   const {
     data: { user },
-  } = await db.auth.getUser();
+  } = await timedQuery("session.auth", () => db.auth.getUser());
   if (!user) redirect("/login");
   const [profileResult, membershipResult] = await Promise.all([
-    db.from("profiles").select("full_name,position,planned_department,suspended")
-      .eq("id", user.id).single(),
-    db.from("memberships")
+    timedQuery("session.profile", () => db.from("profiles").select("full_name,position,planned_department,suspended")
+      .eq("id", user.id).single()),
+    timedQuery("session.membership", () => db.from("memberships")
       .select("id,organization_id,department_id,role,departments(name,active)")
-      .eq("user_id", user.id).eq("status", "active").maybeSingle(),
+      .eq("user_id", user.id).eq("status", "active").maybeSingle()),
   ]);
   const { data: profile, error: profileError } = profileResult;
   const { data: membership, error } = membershipResult;
