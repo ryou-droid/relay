@@ -1,14 +1,14 @@
 import Link from "next/link";
-import { adminDepartments, adminRead, type AdminUser } from "@/lib/admin";
+import { adminSession, adminDepartments, adminRead, type AdminUser } from "@/lib/admin";
 import { createInvitation, manageUser, revokeInvitation } from "@/app/admin/actions";
 import { AdminMessage } from "@/components/admin-message";
 
 export default async function Users({ searchParams }: { searchParams: Promise<{ error?: string; message?: string; invite?: string }> }) {
-  const context = await adminDepartments();
-  const { db, user, membership, departments } = context;
+  const context = await adminSession();
+  const { db, user, membership } = context;
   const organizationAdmin = membership!.role === "organization_admin";
-  const [members, invitations] = await Promise.all([
-    adminRead<AdminUser>(context, "admin_users"), db.from("organization_invitations").select("id,department_id,expires_at").eq("active", true).gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false }),
+  const [{ departments }, members, invitations] = await Promise.all([
+    adminDepartments(), adminRead<AdminUser>(context, "admin_users"), db.from("organization_invitations").select("id,department_id,expires_at").eq("active", true).gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false }),
   ]);
   if (invitations.error) throw new Error("ユーザー情報を取得できません。");
   const query = await searchParams;

@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/navigation-link";
 import { adminSession } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";

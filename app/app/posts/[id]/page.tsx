@@ -58,7 +58,7 @@ export default async function Detail({
       <Link className="back" href="/app">
         ← ホームへ
       </Link>
-      <DetailRead id={id} />
+      <DetailRead key={id} id={id} alreadyRead={Boolean(summary?.is_read)} />
       {pageError && (
         <p className="error" role="alert">
           {pageError}

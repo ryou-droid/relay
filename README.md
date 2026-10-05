@@ -125,3 +125,5 @@ npm test
 ホーム画面への追加・オフライン動作の確認は [PWAの利用手順](docs/pwa.md) を参照してください。
 
 管理画面の読み込み失敗は [管理RPCの25006修正と安全な診断](docs/admin-troubleshooting.md) を参照してください。管理SQLを適用済みの場合は新しい `202610050002_admin_read_only.sql` だけを追加適用します。
+
+画面遷移の先読み、読み込みUI、リクエスト単位の取得共有については [画面遷移の改善](docs/navigation-performance.md) を参照してください。Supabaseの追加設定やSQL適用は不要です。

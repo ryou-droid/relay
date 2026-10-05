@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/navigation-link";
 import { session } from "@/lib/session";
 import Nav from "@/components/nav";
 import { isAdminRole } from "@/lib/admin-access.mjs";

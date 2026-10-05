@@ -1,12 +1,14 @@
-import { adminDepartments, adminRead } from "@/lib/admin";
+import { adminSession, adminDepartments, adminRead } from "@/lib/admin";
 import { disableNotice, saveNotice } from "@/app/admin/actions";
 import { AdminMessage } from "@/components/admin-message";
 
 type Notice = { id: string; department_id: string | null; body: string; active: boolean };
 export default async function Notices({ searchParams }: { searchParams: Promise<{ error?: string; message?: string }> }) {
-  const context = await adminDepartments(true);
-  const { membership, departments } = context;
-  const data = await adminRead<Notice>(context, "admin_notices");
+  const context = await adminSession();
+  const { membership } = context;
+  const [{ departments }, data] = await Promise.all([
+    adminDepartments(true), adminRead<Notice>(context, "admin_notices"),
+  ]);
   const organizationAdmin = membership!.role === "organization_admin";
   return <><h1>お知らせ</h1><p>通常画面の上部に重要連絡として掲載します。各範囲で最大1件です。</p><AdminMessage {...await searchParams} />
     <section className="panel"><form action={saveNotice}>

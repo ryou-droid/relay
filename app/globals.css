@@ -388,7 +388,7 @@ legend {
   color: var(--muted);
   font-weight: 600;
 }
-.bottom-nav a span {
+.bottom-nav a .navigation-content > span:not(.navigation-progress) {
   font-size: 26px;
   line-height: 1.1;
 }
@@ -717,3 +717,19 @@ legend {
 .invite-code{overflow-wrap:anywhere;user-select:all}.invitation-row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.invitation-row form{margin:0}
 @media(max-width:520px){.header-right{gap:4px;min-width:0}.department{max-width:110px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.admin-entry,.notifications{flex-shrink:0}.admin-shell .brand small{font-size:14px}.admin-shell .header .button{padding:8px 12px}.admin-list select{max-width:100%}}
 @media(max-width:360px){.department{max-width:70px}}
+
+/* Keep feedback within each link so rapid successive taps follow Next navigation state. */
+.navigation-content { position:relative; display:inherit; flex-direction:inherit; align-items:inherit; justify-content:inherit; gap:inherit; width:100%; border-radius:inherit; }
+.navigation-progress { position:absolute; inset:auto 0 -3px; height:3px; border-radius:3px; background:currentColor; opacity:0; pointer-events:none; }
+.navigation-content[data-pending="true"] { color:var(--blue); }
+.navigation-content[data-pending="true"] .navigation-progress { opacity:1; }
+a:active, button:active { filter:brightness(.9); }
+.bottom-nav a:active, .bottom-nav a:has([data-pending="true"]) { background:#edf3ff; border-radius:12px; }
+.skeleton { background:#e5eaf2; border-radius:8px; animation:skeleton-pulse 1.4s ease-in-out infinite; }
+.skeleton-title { width:45%; max-width:280px; height:30px; margin:0 0 24px; }
+.skeleton-label { width:28%; height:20px; margin-bottom:20px; }
+.skeleton-line { width:90%; height:20px; margin:14px 0; }
+.skeleton-line.short { width:60%; }
+.skeleton-field { height:64px; margin:16px 0 24px; }
+@keyframes skeleton-pulse { 50% { opacity:.5; } }
+@media(prefers-reduced-motion:reduce) { .skeleton { animation:none; } }

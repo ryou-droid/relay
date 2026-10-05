@@ -1,16 +1,17 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { adminDepartments, adminRead, type Approval } from "@/lib/admin";
+import { adminSession, adminDepartments, adminRead, type Approval } from "@/lib/admin";
 import { ApprovalForm } from "@/components/approval-form";
 import { AdminMessage } from "@/components/admin-message";
 
 export default async function ApprovalDetail({ params, searchParams }: {
   params: Promise<{ id: string }>; searchParams: Promise<{ error?: string }>;
 }) {
-  const context = await adminDepartments(true);
-  const { departments } = context;
+  const context = await adminSession();
   const { id } = await params;
-  const data = await adminRead<Approval>(context, "admin_approvals");
+  const [{ departments }, data] = await Promise.all([
+    adminDepartments(true), adminRead<Approval>(context, "admin_approvals"),
+  ]);
   const request = data.find((item) => item.request_id === id);
   if (!request) notFound();
   return <><Link className="back" href="/admin/approvals">← 承認待ち</Link><h1>{request.full_name}</h1>

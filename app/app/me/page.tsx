@@ -1,13 +1,7 @@
 import { session } from "@/lib/session";
 import { logout } from "@/app/actions";
 export default async function Me() {
-  const { db, user, membership } = await session();
-  const { data: profile, error } = await db
-    .from("profiles")
-    .select("*")
-    .eq("id", user.id)
-    .single();
-  if (error) throw error;
+  const { user, membership, profile } = await session();
   return (
     <>
       <div className="page-heading">

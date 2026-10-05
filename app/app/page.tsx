@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/navigation-link";
 import { session } from "@/lib/session";
 import PostCard from "@/components/post-card";
 import type { Post, Summary } from "@/lib/domain";
