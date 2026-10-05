@@ -1,3 +1,4 @@
+import { timedQuery } from "./lib/server/performance";
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 export async function proxy(request: NextRequest) {
@@ -25,11 +26,11 @@ export async function proxy(request: NextRequest) {
   );
   // Verify the JWT and refresh cookies. Asymmetric keys use cached public JWKS;
   // legacy symmetric keys fall back to Auth verification. Pages still getUser().
-  await client.auth.getClaims();
+  await timedQuery("proxy.auth", () => client.auth.getClaims());
   return response;
 }
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon\\.ico$|sw\\.js$|offline\\.html$|manifest\\.webmanifest$|icons/|.*\\.(?:svg|png|jpg)$).*)",
+    "/((?!_next/static|_next/image|favicon\\.ico$|sw\\.js$|offline\\.html$|launch\\.html$|app-shell\\.(?:css|js)$|manifest\\.webmanifest$|icons/|.*\\.(?:svg|png|jpg)$).*)",
   ],
 };

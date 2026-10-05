@@ -7,7 +7,7 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "Relay",
     description: "チームの引き継ぎ・確認・対応管理",
     lang: "ja",
-    start_url: "/app",
+    start_url: "/launch.html",
     scope: "/",
     display: "standalone",
     background_color: "#f5f7fb",

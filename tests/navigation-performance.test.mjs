@@ -93,6 +93,7 @@ test('proxy uses verified claims and preserves refresh cookies, without a second
   const exports = {}; let claims = 0; const forwarded = [], returned = [];
   vm.runInNewContext(compiled, { exports, process: { env: { NEXT_PUBLIC_SUPABASE_URL: 'https://example.test', NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'public-test' } }, require: name => {
     if (name === '@supabase/ssr') return { createServerClient: (_url, _key, options) => ({ auth: { getClaims: async () => { claims++; options.cookies.setAll([{ name: 'refreshed', value: 'test', options: { httpOnly: true } }]); return { data: null, error: new Error('invalid token') }; }, getUser: () => { throw new Error('duplicate verification'); } } }) };
+    if (name === './lib/server/performance') return { timedQuery: async (_name,work) => work() };
     if (name === 'next/server') return { NextResponse: { next: () => ({ cookies: { set: (...args) => returned.push(args) } }) } };
     throw new Error(name);
   } });
@@ -164,7 +165,7 @@ test('actual home uses one bounded feed RPC plus notices in parallel, with a ser
     if (name === '@/lib/feed') return { homeFilters: Object.keys(pages).map(key => [key,key]) };
     if (name === '@/lib/server/performance') return { timedQuery: async (_name,work) => work(), startTiming: () => () => {} };
     if (name === 'node:crypto') return { randomUUID: () => 'request-local-key' };
-    if (name === 'react/jsx-runtime') return require(name);
+    if (name === 'react/jsx-runtime' || name === 'react') return require(name);
     return { __esModule: true, default: name === '@/components/feed-list' ? 'feed-list' : 'a' };
   } });
   const props = { searchParams: Promise.resolve({}) };
@@ -173,11 +174,20 @@ test('actual home uses one bounded feed RPC plus notices in parallel, with a ser
     const visit = node => { if (Array.isArray(node)) return node.forEach(visit); if (typeof node === 'string') { result.text.push(node); return; } if (!node?.props) return; if (node.props.className === 'important-notice') result.notices++; if(node.type==='feed-list')result.feed=node.props; visit(node.props.children); };
     visit(tree); return result;
   };
-  const empty = inspect(await exports.default(props));
+  const resolve = async node => {
+    if (Array.isArray(node)) return Promise.all(node.map(resolve));
+    if (!node?.props) return node;
+    if (typeof node.type === 'function') return resolve(await node.type(node.props));
+    return {...node,props:{...node.props,children:await resolve(node.props.children)}};
+  };
+  const initial = exports.default(props);
+  assert.ok(inspect(initial).text.includes('今日の引き継ぎ'));
+  assert.equal(reads.length,0,'heading is available before any query');
+  const empty = inspect(await resolve(initial));
   assert.equal(empty.notices, 0); assert.equal(empty.feed.initialPages,pages); assert.equal(empty.feed.initialFilter,'new');
-  assert.equal(gates,1); assert.deepEqual(reads,['home_feed','notices']);
+  assert.equal(gates,2); assert.deepEqual(reads.sort(),['home_feed','notices']);
   notices = [{ id: 'n', department_id: null, body: '実際の重要連絡' }];
-  const active = inspect(await exports.default(props));
+  const active = inspect(await resolve(exports.default(props)));
   assert.equal(active.notices, 1); assert.ok(active.text.includes('実際の重要連絡'));
 });
 

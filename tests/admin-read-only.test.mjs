@@ -86,10 +86,12 @@ test('organization admin can render the actual /admin page with successful RPC d
  vm.runInNewContext(compiled,{exports,require:(name)=>{
   if(name==='@/lib/server/performance')return {startTiming:()=>()=>{},timedQuery:async(_name,work)=>work()};
   if(name==='@/lib/admin')return {adminSession:async()=>({membership:{role:'organization_admin'}}),adminRead:async()=>{reads++;return [];}};
-  if(name==='react/jsx-runtime')return require(name);
+  if(name==='react/jsx-runtime'||name==='react')return require(name);
   return {__esModule:true,default:()=>null};
  }});
- const tree=await exports.default();assert.ok(tree);assert.equal(reads,1);
+ const tree=await exports.default();assert.ok(tree);assert.equal(reads,0,'menu does not wait for counts');
+ const stream=async element=>{if(Array.isArray(element)){await Promise.all(element.map(stream));return;}if(!element?.props)return;if(typeof element.type==='function'&&!element.props.href){await stream(await element.type(element.props));return;}await stream(element.props.children);};
+ await stream(tree);assert.equal(reads,1);
  const links=[];const visit=(element)=>{if(Array.isArray(element)){element.forEach(visit);return;}if(!element?.props)return;if(element.props.href)links.push(element.props.href);visit(element.props.children);};visit(tree);
  assert.ok(links.includes('/admin/approvals'));assert.ok(links.includes('/admin/departments'));
 });

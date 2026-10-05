@@ -82,3 +82,46 @@ test("PWA icon PNG dimensions and favicon are valid", async () => {
   assert.equal(ico.readUInt16LE(2), 1);
   assert.equal(ico.readUInt16LE(4), 1);
 });
+
+
+test("PWA start returns the public skeleton without a network/Auth wait, but protected pages stay uncached", async () => {
+  const sw = await worker();
+  const before = sw.network.length;
+  assert.equal(await (await sw.fetch("/app", { mode: "navigate" })).text(), "/launch.html");
+  assert.equal(sw.network.length, before);
+  assert.equal(await (await sw.fetch("/app?__relay_start=1", { mode: "navigate" })).text(), "network content");
+  assert.ok(!sw.stored.has(`${origin}/app?__relay_start=1`));
+  assert.equal(await sw.fetch("/app?_rsc=secret"),undefined);
+  assert.equal(await (await sw.fetch("/app?code=secret", {mode:"navigate"})).text(),"network content");
+  sw.setOffline();
+  assert.equal(await (await sw.fetch("/app", {mode:"navigate"})).text(),"/launch.html");
+  const html=await readFile(new URL("../public/launch.html",import.meta.url),"utf8");
+  assert.ok(html.includes("今日の引き継ぎ"));
+  assert.ok(html.includes("メインナビゲーション"));
+  assert.ok(!/supabase|localStorage|service_role|organization_admin/.test(html));
+  const proxy=await readFile(new URL("../proxy.ts",import.meta.url),"utf8");
+  assert.ok(proxy.includes("launch"));
+});
+
+test("launch script paints before protected navigation and does not interrupt an explicit link", async () => {
+  const source = await readFile(new URL("../public/app-shell.js",import.meta.url),"utf8");
+  const run = (online) => {
+    const frames=[], navigations=[],listeners={}, status={textContent:""};
+    class Element { closest() { return true; } }
+    vm.runInNewContext(source,{
+      Element, navigator:{onLine:online},
+      document:{getElementById:()=>status,addEventListener:(name,callback)=>{listeners[name]=callback;}},
+      window:{addEventListener:(name,callback)=>{listeners[name]=callback;}},
+      requestAnimationFrame:callback=>{frames.push(callback);},
+      location:{replace:path=>navigations.push(path)},
+    });
+    return {frames,navigations,listeners,status,Element};
+  };
+  const active=run(true);
+  assert.equal(active.navigations.length,0);
+  active.frames.shift()();assert.equal(active.navigations.length,0);
+  active.frames.shift()();assert.deepEqual(active.navigations,["/app?__relay_start=1"]);
+  const offline=run(false);assert.equal(offline.frames.length,0);assert.ok(offline.status.textContent.includes("オフライン"));
+  const clicked=run(true);clicked.listeners.click({target:new clicked.Element()});
+  clicked.frames.shift()();clicked.frames.shift()();assert.equal(clicked.navigations.length,0);
+});

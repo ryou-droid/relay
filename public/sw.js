@@ -1,7 +1,7 @@
-/* Only public static files are cached. Never cache pages, Auth or API responses. */
-const CACHE = "relay-static-v1";
+/* Only public static files are cached. Never cache authenticated pages, Auth or API responses. */
+const CACHE = "relay-static-v2";
 const OFFLINE = "/offline.html";
-const PUBLIC_FILES = [OFFLINE, "/icons/relay-192.png", "/icons/relay-512.png", "/icons/relay-maskable-512.png", "/icons/apple-touch-icon.png", "/icons/relay.svg", "/favicon.ico"];
+const PUBLIC_FILES = [OFFLINE, "/launch.html", "/app-shell.css", "/app-shell.js", "/icons/relay-192.png", "/icons/relay-512.png", "/icons/relay-maskable-512.png", "/icons/apple-touch-icon.png", "/icons/relay.svg", "/favicon.ico"];
 const MAX_ENTRIES = 64;
 
 self.addEventListener("install", (event) => {
@@ -23,9 +23,16 @@ self.addEventListener("fetch", (event) => {
   // Codes and tokens must always go straight to the server, even offline.
   if (url.pathname.startsWith("/auth/")) return;
   if (request.mode === "navigate") {
-    event.respondWith(fetch(request).catch(async () => {
-      return (await caches.match(OFFLINE)) || Response.error();
-    }));
+    event.respondWith((async () => {
+      // Existing installed PWAs still start at /app. Return ONLY the public
+      // launch document; its script opens the real, uncached protected route.
+      // Query-bearing URLs (including Auth parameters/RSC) never take this path.
+      if ((url.pathname === "/app" || url.pathname === "/launch.html") && !url.search) {
+        const shell = await caches.match("/launch.html");
+        if (shell) return shell;
+      }
+      return fetch(request).catch(async () => (await caches.match(OFFLINE)) || Response.error());
+    })());
     return;
   }
   const isStatic = !url.search && (

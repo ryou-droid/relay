@@ -14,10 +14,13 @@ test('real feed SQL bounds aggregation, keyset pages and tenant/role permissions
   for(const item of first.items)assert.equal(item.summary.member_count,2);
   const home=(await db.query('select home_feed() value')).rows[0].value;
   for(const [key,page] of Object.entries(home)) {
-   assert.ok(page.items.length<=30,key);
+   assert.ok(page.items.length<=15,key);
    assert.ok(page.items.every(x=>!['他組織','他部署'].includes(x.post.title)));
   }
-  assert.equal(home.new.items.length,30);assert.equal(home.today.items.length,30);
+  assert.equal(home.new.items.length,15);assert.equal(home.today.items.length,15);
+  const nextHome = await get('home','new',home.new.next);
+  assert.equal(nextHome.items.length,30);
+  assert.equal(new Set([...home.new.items,...nextHome.items].map(item=>item.post.id)).size,45);
   const summaries=(await db.query('select * from post_summaries_for($1)',[[first.items[0].post.id,id(10000),id(10001)]])).rows;
   assert.equal(summaries.length,1);
   await db.exec('rollback');

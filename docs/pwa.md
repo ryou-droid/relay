@@ -20,8 +20,8 @@ AndroidのChromeではメニューの「アプリをインストール」また�
 ## オフラインと安全性
 
 - `public/sw.js` をproductionビルドだけで登録します。HTTPSまたはlocalhostのsecure contextが必要です。`next dev`では登録しません。
-- キャッシュ対象は専用の公開オフライン画面、Relayアイコン、同一オリジンの `/_next/static/` 配下のJS/CSS/フォントのみ。静的キャッシュは最大64件に制限し、バージョン更新時に古いRelayキャッシュだけ削除します。
-- 認証済みHTML・投稿・API・RSC・Server Actions・外部Supabase通信をCache Storageへ保存しません。ページは常にネットワークを利用し、通信失敗時だけ投稿を含まない外枠の案内画面を表示します。オフラインでのログイン・投稿・編集は対応しません。
+- キャッシュ対象は公開の起動用画面（`launch.html` と専用CSS/JS）、オフライン画面、Relayアイコン、同一オリジンの `/_next/static/` 配下のJS/CSS/フォントのみ。静的キャッシュは最大64件に制限し、バージョン更新時に古いRelayキャッシュだけ削除します。
+- 認証済みHTML・投稿・API・RSC・Server Actions・外部Supabase通信をCache Storageへ保存しません。認証付きページは常にネットワークを利用し、通信失敗時だけ投稿を含まない外枠の案内画面を表示します。オフラインでのログイン・投稿・編集は対応しません。
 - `/auth/` のリンク検証は常にサーバーへ送ります。コードやトークンをキャッシュしたり、オフラインページに転送したりしません。既存の認証・RLS・Origin検証は維持しています。
 - Service worker自体はno-storeで配信。新workerは旧アプリのウィンドウが閉じるまで待ち、操作途中の強制更新を避けます。
 - プッシュ通知・通知権限の要求・App Storeへの配布は実装していません。Supabase側の追加設定・追加キーも不要です。
@@ -32,8 +32,10 @@ AndroidのChromeではメニューの「アプリをインストール」また�
 2. アイコンから起動し、URLバーなしで表示されることを確認します。
 3. 通信がある状態でログイン・投稿・パスワード再設定を確認します。
 4. 一度オンラインで開いてworkerの登録が終わった後、機内モードで再起動します。Relayのオフライン案内が出ること、投稿が表示されないことを確認します。初回起動からオフラインの場合は準備されていません。
-5. PCのDevTools → ApplicationでManifest、Service Workers、Cache Storageを確認します。`relay-static-v1` 内に投稿URL・認証URL・API応答がないことを確認します。Consoleの `matchMedia('(display-mode: standalone)').matches` がtrueならstandalone起動です。iOSでは `navigator.standalone` も確認できます。
+5. PCのDevTools → ApplicationでManifest、Service Workers、Cache Storageを確認します。`relay-static-v2` 内に投稿URL・認証URL・API応答がないことを確認します。Consoleの `matchMedia('(display-mode: standalone)').matches` がtrueならstandalone起動です。iOSでは `navigator.standalone` も確認できます。
 
 ローカルでworkerを確認するには `npm run build` → `npm start` で `http://localhost:3000` を開きます。ポートやオリジンを変える場合は認証の既存Redirect URL設定も適用されます。通常の開発へ戻る前にDevToolsでworkerをUnregisterし、Relayキャッシュを削除すると開発用ファイルと混在しません。
 
 本作業では実機でのインストール・Vercelデプロイ・実Supabaseへの認証試行は行っていません。
+
+起動用の公開App ShellとSQLの追加適用は [起動と画面表示](startup-performance.md) を参照してください。

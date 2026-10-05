@@ -1,5 +1,5 @@
 import { Suspense } from "react";
-import Loading from "@/app/loading";
+import Loading from "@/components/member-loading";
 import Link from "@/components/navigation-link";
 import { session } from "@/lib/session";
 import Nav from "@/components/nav";
