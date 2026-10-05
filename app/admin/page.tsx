@@ -5,7 +5,7 @@ export default async function Admin() {
   const context = await adminSession();
   const { membership } = context;
   const data = await adminRead<Approval>(context, "admin_approvals");
-  return <><h1>チームを管理</h1><p>部署を用意し、参加申請を承認しましょう。</p><div className="admin-menu-grid">
+  return <><h1>部署・承認管理</h1><div className="admin-menu-grid">
     <Link className="admin-card" href="/admin/approvals"><strong>承認待ち</strong><span>{data?.length || 0} 人の参加申請</span></Link>
     <Link className="admin-card" href="/admin/users"><strong>ユーザー</strong><span>招待・利用状態{membership!.role === "organization_admin" ? "・権限" : ""}</span></Link>
     {membership!.role === "organization_admin" && <Link className="admin-card" href="/admin/departments"><strong>部署</strong><span>部署の追加・名前変更</span></Link>}

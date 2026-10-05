@@ -442,7 +442,7 @@ legend {
 }
 .empty {
   text-align: center;
-  padding: 54px 20px;
+  padding: 28px 20px;
   color: var(--muted);
 }
 .empty > span {
@@ -734,3 +734,10 @@ a:focus:not(:focus-visible), button:focus:not(:focus-visible), summary:focus:not
 .navigation-feedback { display:none; }
 
 button:active, summary:active { filter:brightness(.9); }
+
+/* Pointer down responds immediately; navigation intent survives pointer-up until URL commit. */
+.responsive-link[data-pressed="true"], .responsive-link[data-navigation-intent="true"] { background-color:#e8f0ff; }
+.bottom-nav .responsive-link[data-pressed="true"], .bottom-nav .responsive-link[data-navigation-intent="true"] { color:var(--blue); border-radius:12px; }
+.responsive-link.button[data-pressed="true"], .responsive-link.button[data-navigation-intent="true"], .categories .active[data-pressed="true"], .categories .active[data-navigation-intent="true"] { background-color:#1d4ed8; }
+
+.responsive-link.button.secondary:is(:active, [data-pressed="true"], [data-navigation-intent="true"]), .responsive-link.button.secondary:has([data-pending="true"]) { color:white; }

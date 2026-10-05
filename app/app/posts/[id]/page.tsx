@@ -154,7 +154,6 @@ export default async function Detail({
       </article>
       <section className="panel">
         <h2>補足</h2>
-        <p className="muted">対応に必要な短い補足・確認を残せます。</p>
         {supp.data?.map((item) => (
           <div className="supplement" key={item.id}>
             <strong>{name(item.author_id)}</strong>

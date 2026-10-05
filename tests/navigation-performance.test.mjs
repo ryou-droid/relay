@@ -98,3 +98,77 @@ test('proxy uses verified claims and preserves refresh cookies, without a second
   assert.equal(claims, 1); assert.equal(forwarded.length, 1); assert.equal(returned.length, 1);
   // Invalid claims are not used as identity: the protected page still calls session/getUser.
 });
+
+test('navigation feedback is synchronous, survives pointer-up and clears on completion, replacement or failure', async () => {
+  const source = await readFile(new URL('../lib/navigation-feedback.ts', import.meta.url), 'utf8');
+  const compiled = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+  const feedback = {}; let timeout; let cancelled = 0;
+  vm.runInNewContext(compiled, { exports: feedback, URL, setTimeout: callback => { timeout = callback; return 1; }, clearTimeout: () => { cancelled++; } });
+  const anchor = href => {
+    const attributes = new Map();
+    return { href, ownerDocument: { location: { href: 'https://relay.test/app?category=new' } }, getAttribute: key => attributes.get(key) ?? null, setAttribute: (key, value) => attributes.set(key, value), removeAttribute: key => attributes.delete(key) };
+  };
+  const post = anchor('https://relay.test/app/posts/new');
+  feedback.beginNavigationFeedback(post);
+  assert.equal(post.getAttribute('data-navigation-intent'), 'true');
+  assert.equal(post.getAttribute('aria-busy'), 'true');
+  const category = anchor('https://relay.test/app?category=unread');
+  feedback.beginNavigationFeedback(category);
+  assert.equal(post.getAttribute('data-navigation-intent'), null);
+  assert.equal(category.getAttribute('data-navigation-intent'), 'true');
+  feedback.finishNavigationFeedback();
+  assert.equal(category.getAttribute('aria-busy'), null);
+  for (const href of ['https://relay.test/app?category=new', 'https://relay.test/app?category=new#top', 'https://other.test/app']) {
+    const link = anchor(href); feedback.beginNavigationFeedback(link);
+    assert.equal(link.getAttribute('aria-busy'), null);
+  }
+  post.setAttribute('aria-busy', 'false'); feedback.beginNavigationFeedback(post); timeout();
+  assert.equal(post.getAttribute('aria-busy'), 'false'); assert.ok(cancelled > 0);
+
+  const component = ts.transpileModule(await readFile(new URL('../components/navigation-link.tsx', import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
+  const exports = {};
+  vm.runInNewContext(component, { exports, require: name => {
+    if (name === 'react') return { useRef: current => ({ current }) };
+    if (name === 'react/jsx-runtime') return require(name);
+    if (name === 'next/link') return { __esModule: true, default: 'a', useLinkStatus: () => ({ pending: false }) };
+    if (name === '@/lib/navigation-feedback') return feedback;
+    throw new Error(name);
+  } });
+  const tree = exports.default({ href: '/app/posts/new', children: '投稿' });
+  tree.props.ref.current = post;
+  const event = { button: 0, clientX: 10, clientY: 10, currentTarget: post, defaultPrevented: false };
+  tree.props.onPointerDown(event); assert.equal(post.getAttribute('data-pressed'), 'true');
+  tree.props.onPointerMove({ ...event, clientX: 40 }); assert.equal(post.getAttribute('data-pressed'), null);
+  tree.props.onPointerDown(event); tree.props.onPointerCancel(event); assert.equal(post.getAttribute('data-pressed'), null);
+  tree.props.onPointerDown(event); tree.props.onPointerUp(event); assert.equal(post.getAttribute('data-pressed'), null);
+  tree.props.onNavigate({ preventDefault: () => { throw new Error('normal navigation must not be blocked'); } });
+  assert.equal(post.getAttribute('data-navigation-intent'), 'true');
+  feedback.finishNavigationFeedback();
+  const blocked = exports.default({ href: '/app/posts/new', children: '投稿', onNavigate: event => event.preventDefault() });
+  blocked.props.ref.current = post; let prevented = false;
+  blocked.props.onNavigate({ preventDefault: () => { prevented = true; } });
+  assert.equal(prevented, true); assert.equal(post.getAttribute('data-navigation-intent'), null);
+});
+
+test('actual home empty state has one next action and no redundant notice/catchphrase cards', async () => {
+  const compiled = ts.transpileModule(await readFile(new URL('../app/app/page.tsx', import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
+  const exports = {}; let notices = [];
+  vm.runInNewContext(compiled, { exports, require: name => {
+    if (name === '@/lib/session') return { session: async () => ({ db: { rpc: async () => ({ data: [], error: null }), from: table => { const query = { select: () => query, order: async () => ({ data: [], error: null }), eq: async () => ({ data: notices, error: null }) }; assert.ok(['posts', 'important_notices'].includes(table)); return query; } } }) };
+    if (name === 'react/jsx-runtime') return require(name);
+    return { __esModule: true, default: 'a' };
+  } });
+  const props = { searchParams: Promise.resolve({}) };
+  const inspect = tree => {
+    const result = { text: [], notices: 0, actions: [] };
+    const visit = node => { if (Array.isArray(node)) return node.forEach(visit); if (typeof node === 'string') { result.text.push(node); return; } if (!node?.props) return; if (node.props.className === 'important-notice') result.notices++; if (node.props.className === 'button' && node.props.href === '/app/posts/new') result.actions.push(node.props.href); visit(node.props.children); };
+    visit(tree); return result;
+  };
+  const empty = inspect(await exports.default(props));
+  assert.equal(empty.notices, 0); assert.equal(empty.actions.length, 1);
+  assert.ok(empty.text.includes('今日の引き継ぎ')); assert.ok(empty.text.includes('投稿はありません'));
+  assert.ok(!empty.text.join('').includes('ひとつずつ')); assert.ok(!empty.text.join('').includes('投稿しましょう'));
+  notices = [{ id: 'n', department_id: null, body: '実際の重要連絡' }];
+  const active = inspect(await exports.default(props));
+  assert.equal(active.notices, 1); assert.ok(active.text.includes('実際の重要連絡'));
+});

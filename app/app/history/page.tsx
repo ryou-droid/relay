@@ -32,7 +32,6 @@ export default async function History({
       <div className="page-heading">
         <div>
           <h1>履歴</h1>
-          <p>これまでの引き継ぎと対応を振り返る。</p>
         </div>
       </div>
       <nav className="categories">
@@ -55,7 +54,7 @@ export default async function History({
           />
         ))}
       </div>
-      {!posts.length && <div className="empty">表示する履歴はありません。</div>}
+      {!posts.length && <div className="empty">履歴はありません</div>}
     </>
   );
 }

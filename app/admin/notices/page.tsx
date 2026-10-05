@@ -10,7 +10,7 @@ export default async function Notices({ searchParams }: { searchParams: Promise<
     adminDepartments(true), adminRead<Notice>(context, "admin_notices"),
   ]);
   const organizationAdmin = membership!.role === "organization_admin";
-  return <><h1>お知らせ</h1><p>通常画面の上部に重要連絡として掲載します。各範囲で最大1件です。</p><AdminMessage {...await searchParams} />
+  return <><h1>お知らせ</h1><p>各範囲で最大1件。ホーム上部に表示します。</p><AdminMessage {...await searchParams} />
     <section className="panel"><form action={saveNotice}>
       {organizationAdmin ? <label>掲載範囲<select name="department_id"><option value="">組織全体</option>{departments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</select></label>
         : <><input type="hidden" name="department_id" value={membership!.department_id} /><p>掲載範囲：自部署</p></>}

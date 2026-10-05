@@ -14,7 +14,7 @@ export default async function Users({ searchParams }: { searchParams: Promise<{ 
   const query = await searchParams;
   const createdInvite = invitations.data?.find((invitation) => invitation.id === query.invite);
   const activeDepartments = departments.filter((department) => department.active);
-  return <><h1>ユーザー</h1><p>{organizationAdmin ? "組織内の所属・権限・利用状態を管理します。" : "自部署の一般ユーザーの利用状態を管理します。"}</p><AdminMessage {...query} />
+  return <><h1>ユーザー</h1><AdminMessage {...query} />
     <details className="panel invitations" open={Boolean(createdInvite)}><summary>参加用の招待コード</summary>
       <p>コードを渡して登録してもらうと、承認待ちに表示されます。招待だけでは組織データは見えません。</p>
       <form action={createInvitation}>

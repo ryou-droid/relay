@@ -5,7 +5,7 @@ import { AdminMessage } from "@/components/admin-message";
 export default async function Departments({ searchParams }: { searchParams: Promise<{ error?: string; message?: string }> }) {
   await adminSession(true);
   const { departments } = await adminDepartments();
-  return <><h1>部署</h1><p>承認時に選べる部署を、先に登録します。</p><AdminMessage {...await searchParams} />
+  return <><h1>部署</h1><AdminMessage {...await searchParams} />
     <section className="panel"><h2>部署を追加</h2><form action={saveDepartment}><label>部署名<input name="name" required maxLength={100} placeholder="例：営業部" /></label><input type="hidden" name="active" value="on" /><button>部署を追加</button></form></section>
     <div className="admin-list">{departments.map((department) => <section className="panel" key={department.id}><form action={saveDepartment}>
       <input type="hidden" name="id" value={department.id} /><label>部署名<input name="name" required maxLength={100} defaultValue={department.name} /></label>

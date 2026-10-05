@@ -1,9 +1,11 @@
+import { Suspense } from "react";
+import NavigationCompletion from "@/components/navigation-completion";
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { PwaRegistration } from "@/components/pwa-registration";
 export const metadata: Metadata = {
   title: "Relay | 引き継ぎ・確認・対応管理",
-  description: "チームの引き継ぎを、確かな対応へ。",
+  description: "引き継ぎ・確認・対応管理",
   appleWebApp: { capable: true, title: "Relay", statusBarStyle: "default" },
   applicationName: "Relay",
   // Next.js 16 emits mobile-web-app-capable; retain Apple's tag for older iOS.
@@ -25,7 +27,7 @@ export const viewport: Viewport = {
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ja">
-      <body>{children}<PwaRegistration /></body>
+      <body>{children}<Suspense fallback={null}><NavigationCompletion /></Suspense><PwaRegistration /></body>
     </html>
   );
 }

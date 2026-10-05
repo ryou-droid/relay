@@ -16,13 +16,8 @@ export default function AuthForm({
       <Link href="/" className="brand">
         Relay
       </Link>
-      <p className="eyebrow">チームの引き継ぎを、確かな対応へ。</p>
-      <h1>{signup ? "アカウント登録" : "おかえりなさい"}</h1>
-      <p>
-        {signup
-          ? "登録後は、組織への所属承認をお待ちください。"
-          : "メールアドレスとパスワードでログイン"}
-      </p>
+      <h1>{signup ? "アカウント登録" : "ログイン"}</h1>
+      {signup && <p>登録後は所属承認が必要です。</p>}
       {error && (
         <p role="alert" className="error">
           {error}

@@ -1,5 +1,8 @@
 "use client";
+import { useEffect } from "react";
+import { finishNavigationFeedback } from "@/lib/navigation-feedback";
 export default function ErrorPage({ reset }: { reset: () => void }) {
+  useEffect(() => { finishNavigationFeedback(); }, []);
   return (
     <main className="auth">
       <h1>読み込みに失敗しました</h1>

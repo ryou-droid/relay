@@ -54,23 +54,23 @@ export default async function Home({
       <div className="page-heading">
         <div>
           <h1>今日の引き継ぎ</h1>
-          <p>確認と対応を、ひとつずつ。</p>
         </div>
         <Link className="button desktop-create" href="/app/posts/new">
           ＋ 新しく投稿
         </Link>
       </div>
-      <section className="important-stack" aria-label="重要連絡">
+      {Boolean(n.data?.length) && <section className="important-stack" aria-label="重要連絡">
         {[false, true].map((dept) => {
           const notice = n.data?.find((x) => Boolean(x.department_id) === dept);
+          if (!notice) return null;
           return (
             <div className="important-notice" key={String(dept)}>
               <strong>{dept ? "部署" : "組織"}重要連絡</strong>
-              <p>{notice?.body || "現在、重要連絡はありません"}</p>
+              <p>{notice.body}</p>
             </div>
           );
         })}
-      </section>
+      </section>}
       <nav className="categories" aria-label="投稿カテゴリ">
         {categories.map(([key, label]) => (
           <Link
@@ -97,10 +97,8 @@ export default async function Home({
       </div>
       {!posts.length && (
         <div className="empty">
-          <span>✓</span>
-          <h2>表示する投稿はありません</h2>
-          <p>必要な連絡や引き継ぎを投稿しましょう。</p>
-          <Link href="/app/posts/new">新しく投稿する →</Link>
+          <h2>投稿はありません</h2>
+          <Link className="button" href="/app/posts/new">投稿する</Link>
         </div>
       )}
     </>
