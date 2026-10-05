@@ -12,7 +12,7 @@ async function ProtectedAdminLayout({ children }: { children: React.ReactNode })
       <nav className="admin-nav" aria-label="管理メニュー">
         <Link href="/admin/approvals">承認待ち</Link><Link href="/admin/users">ユーザー</Link>
         {membership!.role === "organization_admin" && <Link href="/admin/departments">部署</Link>}
-        <Link href="/admin/notices">お知らせ</Link>
+        <Link href="/admin/notices">お知らせ</Link>{membership!.role === "organization_admin" && <Link href="/admin/invite">招待</Link>}
       </nav>{children}</main>
   </div>;
 }

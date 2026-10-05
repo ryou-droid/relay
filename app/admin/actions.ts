@@ -79,3 +79,13 @@ export async function disableNotice(form: FormData) {
   if (error) { report(error, "disable_notice"); fail("/admin/notices"); }
   changed(); redirect("/admin/notices");
 }
+
+export async function createQrInvitation(form: FormData) {
+  const { db } = await adminSession(true);
+  const kind = value(form, "invite_type");
+  if (kind !== "user" && kind !== "admin") fail("/admin/invite");
+  const { data, error } = await db.rpc("create_qr_invitation", { p_type: kind });
+  if (error) { report(error, "qr_invitation"); fail("/admin/invite", "招待を表示できません。管理者にSQLの適用状況を確認してください。"); }
+  revalidatePath("/admin/invite");
+  redirect("/admin/invite?invite=" + encodeURIComponent(String(data)));
+}

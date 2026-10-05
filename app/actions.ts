@@ -7,7 +7,7 @@ import { randomUUID } from "node:crypto";
 import { registrationFailure } from "@/lib/server/registration-log.mjs";
 const field = (f: FormData, k: string) => String(f.get(k) || "").trim();
 const fail = (path: string, message: string): never =>
-  redirect(`${path}?error=${encodeURIComponent(message)}`);
+  redirect(`${path}${path.includes("?") ? "&" : "?"}error=${encodeURIComponent(message)}`);
 export async function login(f: FormData) {
   if (!configured()) redirect("/setup");
   const db = await supabase();
@@ -50,8 +50,9 @@ export async function register(f: FormData) {
     position = field(f, "position"),
     password = String(f.get("password") || "");
   const invitation = field(f, "invitation_code");
+  const registerPath = invitation ? `/register?invite=${encodeURIComponent(invitation)}` : "/register";
   if (invitation && !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(invitation))
-    fail("/register", "招待コードを確認してください。");
+    fail(registerPath, "招待コードを確認してください。");
   if (
     !name ||
     name.length > 80 ||
@@ -61,7 +62,7 @@ export async function register(f: FormData) {
     position.length > 100 ||
     password.length < 8
   )
-    fail("/register", "入力内容を確認してください。");
+    fail(registerPath, "入力内容を確認してください。");
   const reference = randomUUID();
   const email = field(f, "email");
   const metadata = {
@@ -103,12 +104,12 @@ export async function register(f: FormData) {
     });
   } catch (error) {
     logFailure(error, stage);
-    return fail("/register", failureMessage);
+    return fail(registerPath, failureMessage);
   }
   const { data, error } = result;
   if (error) {
     logFailure(error, "auth.signUp");
-    fail("/register", failureMessage);
+    fail(registerPath, failureMessage);
   }
   if (data.session) redirect("/waiting");
   redirect(

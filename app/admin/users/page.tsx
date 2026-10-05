@@ -1,7 +1,7 @@
 import { timedQuery } from "@/lib/server/performance";
 import Link from "@/components/navigation-link";
 import { adminSession, adminDepartments, adminRead, type AdminUser } from "@/lib/admin";
-import { createInvitation, manageUser, revokeInvitation } from "@/app/admin/actions";
+import { manageUser, revokeInvitation } from "@/app/admin/actions";
 import { AdminMessage } from "@/components/admin-message";
 
 export default async function Users({ searchParams }: { searchParams: Promise<{ error?: string; message?: string; invite?: string }> }) {
@@ -18,11 +18,7 @@ export default async function Users({ searchParams }: { searchParams: Promise<{ 
   return <><h1>ユーザー</h1><AdminMessage {...query} />
     <details className="panel invitations" open={Boolean(createdInvite)}><summary>参加用の招待コード</summary>
       <p>コードを渡して登録してもらうと、承認待ちに表示されます。招待だけでは組織データは見えません。</p>
-      <form action={createInvitation}>
-        {organizationAdmin ? <label>申請先<select name="department_id"><option value="">組織全体（承認時に部署を選択）</option>{activeDepartments.map((department) => <option key={department.id} value={department.id}>{department.name}</option>)}</select></label>
-          : <><input type="hidden" name="department_id" value={membership!.department_id} /><p>申請先：自部署</p></>}
-        <button>招待コードを作成</button>
-      </form>
+      {organizationAdmin && <Link className="button secondary" href="/admin/invite">QRコードで招待</Link>}
       {createdInvite && <div className="notice" role="status"><p>招待コード（30日間有効）</p><code className="invite-code">{createdInvite.id}</code><p><Link href={`/register?invite=${createdInvite.id}`}>登録リンク（長押し・右クリックで共有）</Link></p></div>}
       <div className="admin-list">{invitations.data?.map((invitation) => <div key={invitation.id} className="invitation-row"><span>{departments.find((department) => department.id === invitation.department_id)?.name || "組織全体"}</span><Link href={`/register?invite=${invitation.id}`}>登録リンク</Link><form action={revokeInvitation}><input name="id" type="hidden" value={invitation.id} /><button className="secondary">無効化</button></form></div>)}</div>
     </details>

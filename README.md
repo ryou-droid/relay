@@ -131,3 +131,5 @@ npm test
 一覧の30件取得・即時カテゴリ切替を有効にするには、新しい `supabase/migrations/202610050003_feed_performance.sql` をSQL Editorで一度実行してください。未適用の間は既存の取得方式を使用します。[一覧性能と計測の手順](docs/feed-performance.md) を参照してください。
 
 PWA起動用の公開App Shell・分割Streaming・ホーム初回15件取得は [起動と画面表示](docs/startup-performance.md) を参照してください。003適用済みの場合は `supabase/migrations/202610050004_startup_feed.sql` を追加実行します。
+
+組織管理者のQR招待（一般用・管理者候補用）は [QR招待](docs/qr-invitations.md) を参照してください。`supabase/migrations/202610050005_qr_invitations.sql` の追加適用が必要です。

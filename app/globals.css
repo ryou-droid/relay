@@ -745,3 +745,10 @@ button:active, summary:active { filter:brightness(.9); }
 .feed-more { display:flex; justify-content:center; margin:24px 0; }
 .categories button:active { background:#e8f0ff; color:var(--blue); }
 .categories button.active:active { background:#1d4ed8; color:white; }
+
+.qr-invitations { display:grid; gap:32px; margin-top:24px; }
+.qr-invitation { min-width:0; }
+.invite-qr { width:min(100%, 360px); background:white; margin:16px 0; }
+.invite-qr svg { display:block; width:100%; height:auto; }
+.invite-link { display:inline-block; padding:14px; text-decoration:underline; }
+@media(min-width:768px) { .qr-invitations { grid-template-columns:repeat(2,minmax(0,1fr)); } }

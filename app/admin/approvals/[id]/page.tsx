@@ -10,12 +10,12 @@ export default async function ApprovalDetail({ params, searchParams }: {
   const context = await adminSession();
   const { id } = await params;
   const [{ departments }, data] = await Promise.all([
-    adminDepartments(true), adminRead<Approval>(context, "admin_approvals"),
+    adminDepartments(true), adminRead<Approval>(context, "admin_approval_candidates"),
   ]);
   const request = data.find((item) => item.request_id === id);
   if (!request) notFound();
   return <><Link className="back" href="/admin/approvals">← 承認待ち</Link><h1>{request.full_name}</h1>
-    <p>{request.email}</p><p className="muted">希望部署：{request.planned_department} ／ 役職：{request.position}</p>
+    {request.invite_type === "admin" && <p className="notice">管理者候補（承認後は組織管理者）</p>}<p>{request.email}</p><p className="muted">希望部署：{request.planned_department} ／ 役職：{request.position}</p>
     <AdminMessage {...await searchParams} />
     {request.email_confirmed ? <ApprovalForm key={id} requestId={id} departments={departments} /> : <p className="notice">本人のメール確認後に承認できます。</p>}
   </>;

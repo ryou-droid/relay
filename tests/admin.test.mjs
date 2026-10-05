@@ -32,7 +32,7 @@ test('server admin gate redirects users on direct admin URLs; organization-only 
 
 test('rendering every actual admin page as a regular user redirects before any management data is fetched', async () => {
   const redirect = (url) => { throw new Error(`REDIRECT:${url}`); };
-  for (const page of ['layout.tsx','page.tsx','approvals/page.tsx','approvals/[id]/page.tsx','users/page.tsx','departments/page.tsx','notices/page.tsx']) {
+  for (const page of ['layout.tsx','page.tsx','approvals/page.tsx','approvals/[id]/page.tsx','users/page.tsx','departments/page.tsx','notices/page.tsx','invite/page.tsx']) {
     const source = await readFile(new URL(`../app/admin/${page}`,import.meta.url),'utf8');
     const compiled = ts.transpileModule(source, { compilerOptions: {
       module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2017, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true,

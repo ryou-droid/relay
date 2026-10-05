@@ -5,18 +5,20 @@ export default function AuthForm({
   error,
   message,
   invite,
+  inviteType,
 }: {
   signup?: boolean;
   error?: string;
   message?: string;
   invite?: string;
+  inviteType?: "user" | "admin";
 }) {
   return (
     <main className="auth">
       <Link href="/" className="brand">
         Relay
       </Link>
-      <h1>{signup ? "アカウント登録" : "ログイン"}</h1>
+      <h1>{signup ? (inviteType === "admin" ? "管理者候補の登録" : "アカウント登録") : "ログイン"}</h1>
       {signup && <p>登録後は所属承認が必要です。</p>}
       {error && (
         <p role="alert" className="error">
@@ -56,10 +58,10 @@ export default function AuthForm({
         </label>
         {signup && (
           <>
-            <label>
+            {invite ? <input type="hidden" name="invitation_code" value={invite} /> : <label>
               招待コード（組織の管理者から受け取った場合）
-              <input name="invitation_code" defaultValue={invite || ""} maxLength={36} autoComplete="off" autoCapitalize="none" spellCheck={false} />
-            </label>
+              <input name="invitation_code" maxLength={36} autoComplete="off" autoCapitalize="none" spellCheck={false} />
+            </label>}
             <label>
               所属予定部署
               <input name="planned_department" required maxLength={100} />

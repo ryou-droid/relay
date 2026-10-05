@@ -11,7 +11,7 @@ export async function adminSession(organizationOnly = false): Promise<Awaited<Re
   return requireAdminSession(session, redirect, organizationOnly);
 }
 
-export async function adminRead<T>(context: Awaited<ReturnType<typeof adminSession>>, rpc: "admin_approvals" | "admin_users" | "admin_notices" | "admin_dashboard"): Promise<T[]> {
+export async function adminRead<T>(context: Awaited<ReturnType<typeof adminSession>>, rpc: "admin_approval_candidates" | "admin_approvals" | "admin_users" | "admin_notices" | "admin_dashboard"): Promise<T[]> {
   let failure: unknown;
   try {
     let { data, error } = await timedQuery(`admin.${rpc}`, () => context.db.rpc(rpc));
@@ -36,7 +36,7 @@ export type Department = { id: string; name: string; active: boolean };
 export type Approval = {
   request_id: string; user_id: string; full_name: string; email: string;
   planned_department: string; position: string; department_id: string | null;
-  email_confirmed: boolean; created_at: string;
+  email_confirmed: boolean; created_at: string; invite_type?: "user" | "admin";
 };
 export type AdminUser = {
   membership_id: string; user_id: string; full_name: string; email: string;
