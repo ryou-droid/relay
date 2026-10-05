@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/navigation-link";
 import { login, register } from "@/app/actions";
 export default function AuthForm({
   signup,
@@ -14,7 +14,7 @@ export default function AuthForm({
   return (
     <main className="auth">
       <Link href="/" className="brand">
-        Relay<span className="brand-dot">●</span>
+        Relay
       </Link>
       <p className="eyebrow">チームの引き継ぎを、確かな対応へ。</p>
       <h1>{signup ? "アカウント登録" : "おかえりなさい"}</h1>

@@ -6,7 +6,6 @@ export default async function Me() {
     <>
       <div className="page-heading">
         <div>
-          <p className="eyebrow">MY ACCOUNT</p>
           <h1>マイページ</h1>
         </div>
       </div>

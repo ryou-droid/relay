@@ -1,3 +1,4 @@
+import { cache } from "react";
 import "server-only";
 import { redirect } from "next/navigation";
 import { session } from "./session";
@@ -38,7 +39,7 @@ export type AdminUser = {
   role: string; suspended: boolean;
 };
 
-export async function adminDepartments(activeOnly = false) {
+export const adminDepartments = cache(async (activeOnly = false) => {
   const context = await adminSession();
   let query = context.db.from("departments").select("id,name,active")
     .eq("organization_id", context.membership!.organization_id).order("name");
@@ -46,4 +47,4 @@ export async function adminDepartments(activeOnly = false) {
   const { data, error } = await query;
   if (error) throw new Error("部署を取得できません。管理用SQLの適用を確認してください。");
   return { ...context, departments: (data || []) as Department[] };
-}
+});

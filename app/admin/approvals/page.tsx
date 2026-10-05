@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/navigation-link";
 import { adminSession, adminRead, type Approval } from "@/lib/admin";
 import { AdminMessage } from "@/components/admin-message";
 

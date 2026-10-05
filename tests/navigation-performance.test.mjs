@@ -62,3 +62,39 @@ test('already-read detail skips RPC and refresh; unread detail saves and refresh
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(calls, 1); assert.equal(refreshes, 1);
 });
+
+test('actual detail starts all five scoped reads together and rejects invisible posts', async () => {
+  const compiled = ts.transpileModule(await readFile(new URL('../app/app/posts/[id]/page.tsx', import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
+  const exports = {}; let releases = [], visible = true, authorized = true;
+  const read = name => new Promise(resolve => releases.push(() => resolve({ error: null, data: name === 'posts' ? (visible ? { id: 'p', author_id: 'other', status: 'pending' } : null) : [] })));
+  const db = { rpc: read, from: name => { const query = { select: () => query, eq: () => query, maybeSingle: () => read(name), order: () => read(name) }; return query; } };
+  vm.runInNewContext(compiled, { exports, require: name => {
+    if (name === '@/lib/session') return { session: async () => { if (!authorized) throw new Error('/waiting'); return { db, user: { id: 'me' } }; } };
+    if (name === 'next/navigation') return { notFound: () => { throw new Error('NOT_FOUND'); } };
+    if (name === 'react/jsx-runtime') return require(name);
+    if (name === '@/lib/domain') return { kinds: {}, priorities: {}, statuses: {}, deadline: () => '' };
+    return { __esModule: true, default: () => null };
+  } });
+  const props = { params: Promise.resolve({ id: 'p' }), searchParams: Promise.resolve({}) };
+  for (const value of [true, false]) {
+    visible = value; releases = []; const rendering = exports.default(props);
+    const result = value ? rendering : assert.rejects(rendering, /NOT_FOUND/);
+    await new Promise(resolve => setImmediate(resolve)); assert.equal(releases.length, 5);
+    releases.forEach(resolve => resolve()); await result;
+  }
+  releases = []; authorized = false;
+  await assert.rejects(exports.default(props), /\/waiting/); assert.equal(releases.length, 0);
+});
+
+test('proxy uses verified claims and preserves refresh cookies, without a second getUser', async () => {
+  const compiled = ts.transpileModule(await readFile(new URL('../proxy.ts', import.meta.url), 'utf8'), { compilerOptions: { module: ts.ModuleKind.CommonJS } }).outputText;
+  const exports = {}; let claims = 0; const forwarded = [], returned = [];
+  vm.runInNewContext(compiled, { exports, process: { env: { NEXT_PUBLIC_SUPABASE_URL: 'https://example.test', NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: 'public-test' } }, require: name => {
+    if (name === '@supabase/ssr') return { createServerClient: (_url, _key, options) => ({ auth: { getClaims: async () => { claims++; options.cookies.setAll([{ name: 'refreshed', value: 'test', options: { httpOnly: true } }]); return { data: null, error: new Error('invalid token') }; }, getUser: () => { throw new Error('duplicate verification'); } } }) };
+    if (name === 'next/server') return { NextResponse: { next: () => ({ cookies: { set: (...args) => returned.push(args) } }) } };
+    throw new Error(name);
+  } });
+  await exports.proxy({ cookies: { getAll: () => [], set: (...args) => forwarded.push(args) } });
+  assert.equal(claims, 1); assert.equal(forwarded.length, 1); assert.equal(returned.length, 1);
+  // Invalid claims are not used as identity: the protected page still calls session/getUser.
+});

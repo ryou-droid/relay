@@ -9,6 +9,14 @@ import { createRequire } from 'node:module';
 const require = createRequire(import.meta.url);
 const uid = (n) => `00000000-0000-4000-8000-${String(n).padStart(12,'0')}`;
 
+async function resolveLayout(tree) {
+  tree = await tree;
+  while (tree && (typeof tree.type === 'function' || tree.type === Symbol.for('react.suspense'))) {
+    tree = await (typeof tree.type === 'function' ? tree.type(tree.props) : tree.props.children);
+  }
+  return tree;
+}
+
 test('server admin gate redirects users on direct admin URLs; organization-only pages reject department admins', async () => {
   const redirect = (url) => { throw new Error(`REDIRECT:${url}`); };
   await assert.rejects(requireAdminSession(async () => ({ membership: { role: 'user' } }), redirect), /REDIRECT:\/app/);
@@ -37,11 +45,12 @@ test('rendering every actual admin page as a regular user redirects before any m
     };
     vm.runInNewContext(compiled, {exports, require: (name) => {
       if(name==='@/lib/admin') return {adminSession:guard,adminDepartments:()=>guard()};
+      if(name==='react' || name==='react/jsx-runtime') return require(name);
       if(name==='next/navigation') return {redirect,notFound:()=>{throw new Error('Unexpected notFound');}};
       // These imports must not execute because the page must redirect before rendering.
       return new Proxy({}, { get:()=>()=>{throw new Error(`Unexpected render import: ${name}`);} });
     }});
-    await assert.rejects(exports.default({params:Promise.resolve({id:uid(8)}),searchParams:Promise.resolve({}),children:null}),/REDIRECT:\/app/,page);
+    await assert.rejects(async () => resolveLayout(exports.default({params:Promise.resolve({id:uid(8)}),searchParams:Promise.resolve({}),children:null})),/REDIRECT:\/app/,page);
     assert.equal(gateCalls,1,page);
   }
 });
@@ -70,10 +79,10 @@ test('normal user header never includes management entry; both administrator rol
     vm.runInNewContext(compiled,{exports,require:(name)=>{
       if(name==='@/lib/session')return {session:async()=>({membership:{role,departments:{name:'営業'}}})};
       if(name==='@/lib/admin-access.mjs')return {isAdminRole};
-      if(name==='react/jsx-runtime')return require(name);
+      if(name==='react' || name==='react/jsx-runtime')return require(name);
       return {__esModule:true,default:()=>null};
     }});
-    const tree=await exports.default({children:null});
+    const tree=await resolveLayout(exports.default({children:null}));
     const links=[];
     function visit(element){
       if(Array.isArray(element)){element.forEach(visit);return;}

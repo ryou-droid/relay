@@ -12,7 +12,6 @@ export default async function NewPost({
     <>
       <div className="page-heading">
         <div>
-          <p className="eyebrow">NEW HANDOVER</p>
           <h1>新しく投稿</h1>
           <p>部署のメンバーに、必要な情報を届けます。</p>
         </div>

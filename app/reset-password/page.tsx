@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/navigation-link";
 import { redirect } from "next/navigation";
 import { configured, supabase } from "@/lib/supabase";
 import { updatePassword } from "@/app/password-actions";

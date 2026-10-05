@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/navigation-link";
 import { notFound } from "next/navigation";
 import { session } from "@/lib/session";
 import {
@@ -30,13 +30,8 @@ export default async function Detail({
 }) {
   const { id } = await params;
   const { db, user } = await session();
-  const { data: post, error } = await db
-    .from("posts")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-  if (error || !post) notFound();
-  const [s, m, supp, logs] = await Promise.all([
+  const [postResult, s, m, supp, logs] = await Promise.all([
+    db.from("posts").select("*").eq("id", id).maybeSingle(),
     db.rpc("post_summaries"),
     db.rpc("department_members"),
     db.from("supplements").select("*").eq("post_id", id).order("created_at"),
@@ -46,6 +41,8 @@ export default async function Detail({
       .eq("post_id", id)
       .order("created_at", { ascending: false }),
   ]);
+  const { data: post, error } = postResult;
+  if (error || !post) notFound();
   if (s.error || m.error || supp.error || logs.error)
     throw new Error("詳細の取得に失敗しました");
   const summary = (s.data as Summary[])?.find((x) => x.post_id === id);

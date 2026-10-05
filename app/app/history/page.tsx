@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/navigation-link";
 import { session } from "@/lib/session";
 import PostCard from "@/components/post-card";
 import type { Post, Summary } from "@/lib/domain";
@@ -31,7 +31,6 @@ export default async function History({
     <>
       <div className="page-heading">
         <div>
-          <p className="eyebrow">ACTIVITY ARCHIVE</p>
           <h1>履歴</h1>
           <p>これまでの引き継ぎと対応を振り返る。</p>
         </div>

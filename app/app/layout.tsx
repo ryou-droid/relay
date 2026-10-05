@@ -1,10 +1,12 @@
+import { Suspense } from "react";
+import Loading from "@/app/loading";
 import Link from "@/components/navigation-link";
 import { session } from "@/lib/session";
 import Nav from "@/components/nav";
 import { isAdminRole } from "@/lib/admin-access.mjs";
 export const dynamic = "force-dynamic";
 
-export default async function MemberLayout({
+async function ProtectedMemberLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -18,7 +20,7 @@ export default async function MemberLayout({
     <div className="shell">
       <header className="header">
         <Link className="brand" href="/app">
-          Relay<span className="brand-dot">●</span>
+          Relay
         </Link>
         <div className="header-right">
           <span className="department">{department}</span>
@@ -45,4 +47,8 @@ export default async function MemberLayout({
       <Nav />
     </div>
   );
+}
+
+export default function MemberLayout({ children }: { children: React.ReactNode }) {
+  return <Suspense fallback={<Loading />}><ProtectedMemberLayout>{children}</ProtectedMemberLayout></Suspense>;
 }

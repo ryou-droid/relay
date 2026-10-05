@@ -23,7 +23,9 @@ export async function proxy(request: NextRequest) {
       },
     },
   );
-  await client.auth.getUser();
+  // Verify the JWT and refresh cookies. Asymmetric keys use cached public JWKS;
+  // legacy symmetric keys fall back to Auth verification. Pages still getUser().
+  await client.auth.getClaims();
   return response;
 }
 export const config = {

@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import Link from "next/link";
+import Link from "@/components/navigation-link";
 import { adminSession, adminDepartments, adminRead, type Approval } from "@/lib/admin";
 import { ApprovalForm } from "@/components/approval-form";
 import { AdminMessage } from "@/components/admin-message";

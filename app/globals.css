@@ -108,11 +108,6 @@ legend {
   letter-spacing: -1px;
   color: var(--blue);
 }
-.brand-dot {
-  font-size: 9px;
-  margin-left: 3px;
-  color: #71a2ff;
-}
 .auth {
   width: calc(100% - 32px);
   max-width: 440px;
@@ -388,7 +383,7 @@ legend {
   color: var(--muted);
   font-weight: 600;
 }
-.bottom-nav a .navigation-content > span:not(.navigation-progress) {
+.bottom-nav a > span:not(.navigation-feedback) {
   font-size: 26px;
   line-height: 1.1;
 }
@@ -719,11 +714,6 @@ legend {
 @media(max-width:360px){.department{max-width:70px}}
 
 /* Keep feedback within each link so rapid successive taps follow Next navigation state. */
-.navigation-content { position:relative; display:inherit; flex-direction:inherit; align-items:inherit; justify-content:inherit; gap:inherit; width:100%; border-radius:inherit; }
-.navigation-progress { position:absolute; inset:auto 0 -3px; height:3px; border-radius:3px; background:currentColor; opacity:0; pointer-events:none; }
-.navigation-content[data-pending="true"] { color:var(--blue); }
-.navigation-content[data-pending="true"] .navigation-progress { opacity:1; }
-a:active, button:active { filter:brightness(.9); }
 .bottom-nav a:active, .bottom-nav a:has([data-pending="true"]) { background:#edf3ff; border-radius:12px; }
 .skeleton { background:#e5eaf2; border-radius:8px; animation:skeleton-pulse 1.4s ease-in-out infinite; }
 .skeleton-title { width:45%; max-width:280px; height:30px; margin:0 0 24px; }
@@ -733,3 +723,14 @@ a:active, button:active { filter:brightness(.9); }
 .skeleton-field { height:64px; margin:16px 0 24px; }
 @keyframes skeleton-pulse { 50% { opacity:.5; } }
 @media(prefers-reduced-motion:reduce) { .skeleton { animation:none; } }
+
+/* Safari touch feedback is a surface, never a persistent underline. */
+a, button, summary { -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+.responsive-link:active, .responsive-link:has([data-pending="true"]) { background-color:#e8f0ff; }
+.responsive-link.button:active, .responsive-link.button:has([data-pending="true"]), .categories .active:active, .categories .active:has([data-pending="true"]) { background-color:#1d4ed8; }
+/* Preserve keyboard focus; touch focus alone must not leave a ring. */
+a:focus:not(:focus-visible), button:focus:not(:focus-visible), summary:focus:not(:focus-visible) { outline:none; }
+
+.navigation-feedback { display:none; }
+
+button:active, summary:active { filter:brightness(.9); }

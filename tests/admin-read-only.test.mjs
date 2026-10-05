@@ -65,6 +65,7 @@ test('actual admin read helper logs the received diagnostics and throws a generi
  const compiled=ts.transpileModule(source,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2017}}).outputText;
  const exports={};const logs=[];
  vm.runInNewContext(compiled,{exports,process:{env:{NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY:'test-public-key'}},console:{error:(text)=>logs.push(JSON.parse(text))},require:(name)=>{
+  if(name==='react')return require(name);
   if(name==='./server/admin-log.mjs')return {adminFailure};
   if(name==='node:crypto')return {randomUUID:()=> 'test-reference'};
   return {};

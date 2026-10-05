@@ -1,4 +1,4 @@
-import Link from "next/link";
+import Link from "@/components/navigation-link";
 import { requestPasswordReset } from "@/app/password-actions";
 import PasswordSubmit from "@/components/password-submit";
 export default async function ForgotPassword({

@@ -1,8 +1,10 @@
+import { Suspense } from "react";
+import Loading from "@/app/loading";
 import Link from "@/components/navigation-link";
 import { adminSession } from "@/lib/admin";
 
 export const dynamic = "force-dynamic";
-export default async function AdminLayout({ children }: { children: React.ReactNode }) {
+async function ProtectedAdminLayout({ children }: { children: React.ReactNode }) {
   const { membership } = await adminSession();
   return <div className="shell admin-shell">
     <header className="header"><Link className="brand" href="/admin">Relay <small>管理</small></Link><Link className="button secondary" href="/app">通常画面へ</Link></header>
@@ -13,4 +15,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         <Link href="/admin/notices">お知らせ</Link>
       </nav>{children}</main>
   </div>;
+}
+
+export default function AdminLayout({ children }: { children: React.ReactNode }) {
+  return <Suspense fallback={<Loading />}><ProtectedAdminLayout>{children}</ProtectedAdminLayout></Suspense>;
 }

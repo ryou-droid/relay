@@ -1,15 +1,13 @@
 "use client";
 import Link, { useLinkStatus } from "next/link";
-import type { ComponentProps, ReactNode } from "react";
+import type { ComponentProps } from "react";
 
-function Feedback({ children }: { children: ReactNode }) {
+function Feedback() {
   const { pending } = useLinkStatus();
-  return <span className="navigation-content" data-pending={pending} aria-busy={pending}>
-    {children}<span className="navigation-progress" aria-hidden="true" />
-  </span>;
+  return <span className="navigation-feedback" data-pending={pending} aria-hidden="true" />;
 }
 
 export default function NavigationLink({ children, ...props }: ComponentProps<typeof Link>) {
   // Auto prefetch warms layouts/loading UI, without forcing full private-page prefetch.
-  return <Link {...props} prefetch={null}><Feedback>{children}</Feedback></Link>;
+  return <Link {...props} className={`responsive-link ${props.className || ""}`} prefetch={props.prefetch ?? null}>{children}<Feedback /></Link>;
 }

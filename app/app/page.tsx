@@ -53,7 +53,6 @@ export default async function Home({
     <>
       <div className="page-heading">
         <div>
-          <p className="eyebrow">TEAM WORKSPACE</p>
           <h1>今日の引き継ぎ</h1>
           <p>確認と対応を、ひとつずつ。</p>
         </div>
