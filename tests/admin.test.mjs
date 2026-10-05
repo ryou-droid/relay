@@ -93,7 +93,7 @@ test('real SQL: organization/dept scopes, invitation-bound approval, suspension,
       create table auth.users(id uuid primary key,email text,email_confirmed_at timestamptz,raw_user_meta_data jsonb);
       create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
       grant usage on schema public,auth to authenticated;grant execute on function auth.uid() to authenticated;`);
-    for (const migration of ['202610040001_relay.sql','202610040002_registration_diagnostics.sql','202610050001_admin.sql']) {
+    for (const migration of ['202610040001_relay.sql','202610040002_registration_diagnostics.sql','202610050001_admin.sql','202610050002_admin_read_only.sql']) {
       await db.exec(await readFile(new URL(`../supabase/migrations/${migration}`,import.meta.url),'utf8'));
     }
     const addUser = async (n, invitation, confirmed=true) => db.query('insert into auth.users(id,email,email_confirmed_at,raw_user_meta_data) values($1,$2,$3,$4)',[

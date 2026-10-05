@@ -62,3 +62,11 @@ GitHubのoriginは `https://github.com/ryou-droid/relay.git`。初期確認でre
 - 全マイグレーションを適用したPGliteで、組織別/部署別の申請とユーザーの隔離、招待による組織紐づけ、確認済みメールだけの承認、3権限の差、部署重複、停止/再開、お知らせ範囲、内部関数のEXECUTE拒否、監査ログを検証。従来の投稿ライフサイクル・登録トリガーテストも新マイグレーション適用後に検証。
 - 新しい管理用SQLと最初の管理者設定SQLを追加。実Supabaseへの適用・キー変更・本番デプロイは行っていない。ユーザー側の設定/確認手順はdocs/admin.mdを参照。
 - build・TypeScript・lint・全テストが成功。管理用SQLを含む従来機能のテストも成功。実機のタップ・HTTPによるE2E表示は未検証で、docs/admin.mdの受け入れ確認で行う。
+
+## 管理RPCの読み取り専用トランザクション修正
+
+- 従来のREAD WRITEテストでは見逃していた、STABLE RPC → require_adminのFOR SHARE → 25006をBEGIN READ ONLYで再現。PostgRESTの実行条件に合わせた回帰テストを追加。
+- 新migrationで閲覧用のcheck_admin_readを追加し、3つの閲覧RPCに適用。既存migration・変更RPCのロック・RLS・GRANTによる内部helper遮断を維持。修正SQLの再適用も検証。
+- SQLのrole/所属/suspended/部署active/auth.uid/scope判定、管理者のREAD ONLYでの成功、一般user・匿名・停止・無効部署の拒否を検証。既存のページ直接アクセス拒否テストも維持。
+- 受信したcode/message/details/hintを伏字で記録する実際の管理データ取得helperをテストし、キー・メール・トークン・行データがログに出ないことを確認。実/adminページの管理者描画も検証。
+- 実Supabaseのログ取得・SQL適用・実Vercel/iPhoneでの確認は未実施。実環境のエラーは新ログとの照合が必要。手順はdocs/admin-troubleshooting.md。

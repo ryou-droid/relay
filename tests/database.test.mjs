@@ -18,7 +18,7 @@ test("tenant isolation, membership gates, privacy, lifecycle and audit", async (
         "utf8",
       ),
     );
-    for (const file of ["202610040002_registration_diagnostics.sql", "202610050001_admin.sql"]) {
+    for (const file of ["202610040002_registration_diagnostics.sql", "202610050001_admin.sql", "202610050002_admin_read_only.sql"]) {
       await db.exec(await readFile(new URL("../supabase/migrations/" + file, import.meta.url), "utf8"));
     }
     const uid = (n) => `00000000-0000-0000-0000-${String(n).padStart(12, "0")}`;

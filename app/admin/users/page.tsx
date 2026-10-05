@@ -1,15 +1,16 @@
 import Link from "next/link";
-import { adminDepartments, type AdminUser } from "@/lib/admin";
+import { adminDepartments, adminRead, type AdminUser } from "@/lib/admin";
 import { createInvitation, manageUser, revokeInvitation } from "@/app/admin/actions";
 import { AdminMessage } from "@/components/admin-message";
 
 export default async function Users({ searchParams }: { searchParams: Promise<{ error?: string; message?: string; invite?: string }> }) {
-  const { db, user, membership, departments } = await adminDepartments();
+  const context = await adminDepartments();
+  const { db, user, membership, departments } = context;
   const organizationAdmin = membership!.role === "organization_admin";
   const [members, invitations] = await Promise.all([
-    db.rpc("admin_users"), db.from("organization_invitations").select("id,department_id,expires_at").eq("active", true).gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false }),
+    adminRead<AdminUser>(context, "admin_users"), db.from("organization_invitations").select("id,department_id,expires_at").eq("active", true).gt("expires_at", new Date().toISOString()).order("created_at", { ascending: false }),
   ]);
-  if (members.error || invitations.error) throw new Error("ユーザー情報を取得できません。");
+  if (invitations.error) throw new Error("ユーザー情報を取得できません。");
   const query = await searchParams;
   const createdInvite = invitations.data?.find((invitation) => invitation.id === query.invite);
   const activeDepartments = departments.filter((department) => department.active);
@@ -24,7 +25,7 @@ export default async function Users({ searchParams }: { searchParams: Promise<{ 
       {createdInvite && <div className="notice" role="status"><p>招待コード（30日間有効）</p><code className="invite-code">{createdInvite.id}</code><p><Link href={`/register?invite=${createdInvite.id}`}>登録リンク（長押し・右クリックで共有）</Link></p></div>}
       <div className="admin-list">{invitations.data?.map((invitation) => <div key={invitation.id} className="invitation-row"><span>{departments.find((department) => department.id === invitation.department_id)?.name || "組織全体"}</span><Link href={`/register?invite=${invitation.id}`}>登録リンク</Link><form action={revokeInvitation}><input name="id" type="hidden" value={invitation.id} /><button className="secondary">無効化</button></form></div>)}</div>
     </details>
-    <div className="admin-list">{(members.data as AdminUser[]).map((member) => {
+    <div className="admin-list">{members.map((member) => {
       const editable = member.user_id !== user.id && (organizationAdmin || member.role === "user");
       return <section className="panel" key={member.membership_id}><h2>{member.full_name}</h2><p>{member.email}</p><p className="muted">{member.department_name} ・ {member.position} ・ {member.suspended ? "利用停止中" : "利用中"}</p>
         {editable ? <form action={manageUser}><input type="hidden" name="membership_id" value={member.membership_id} />

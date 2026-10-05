@@ -2,9 +2,28 @@ import "server-only";
 import { redirect } from "next/navigation";
 import { session } from "./session";
 import { requireAdminSession } from "./admin-access.mjs";
+import { randomUUID } from "node:crypto";
+import { adminFailure } from "./server/admin-log.mjs";
 
 export async function adminSession(organizationOnly = false): Promise<Awaited<ReturnType<typeof session>>> {
   return requireAdminSession(session, redirect, organizationOnly);
+}
+
+export async function adminRead<T>(context: Awaited<ReturnType<typeof adminSession>>, rpc: "admin_approvals" | "admin_users" | "admin_notices"): Promise<T[]> {
+  let failure: unknown;
+  try {
+    const { data, error } = await context.db.rpc(rpc);
+    if (!error) return (data || []) as T[];
+    failure = error;
+  } catch (error) {
+    failure = error;
+  }
+  const reference = randomUUID();
+  console.error(JSON.stringify(adminFailure({
+    reference, operation: rpc, error: failure,
+    redactions: [context.user.email || "", process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || ""],
+  })));
+  throw new Error(`管理データを取得できません。確認番号：${reference}`);
 }
 
 export type Department = { id: string; name: string; active: boolean };

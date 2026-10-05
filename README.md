@@ -28,7 +28,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=YOUR_PUBLISHABLE_KEY
 ### Supabaseの設定
 
 1. 新しい開発用Supabaseプロジェクトを用意します。既存DBへは適用前にスキーマを確認してください。
-2. SQL Editorで `supabase/migrations/202610040001_relay.sql`、続いて `supabase/migrations/202610040002_registration_diagnostics.sql`、`supabase/migrations/202610050001_admin.sql` を順に実行します。またはSupabase CLIを導入済みなら `supabase db push` で適用します。001は初回適用専用です。既存のRelay DBには未適用のマイグレーションだけ追加適用してください。管理機能には今回の `202610050001_admin.sql` が必要です。
+2. SQL Editorで `supabase/migrations/202610040001_relay.sql`、続いて `supabase/migrations/202610040002_registration_diagnostics.sql`、`supabase/migrations/202610050001_admin.sql`、`supabase/migrations/202610050002_admin_read_only.sql` を順に実行します。またはSupabase CLIを導入済みなら `supabase db push` で適用します。001は初回適用専用です。既存のRelay DBには未適用のマイグレーションだけ追加適用してください。管理機能には今回の `202610050001_admin.sql` が必要です。
 3. AuthenticationでEmail / Passwordを有効化し、メール確認を有効にしてください。最低パスワード長は8文字以上を推奨します。
 4. Site URLを開発時は `http://localhost:3000` に設定します。実運用URL・許可するRedirect URLは運用時に人間が設定してください。
 5. Authentication → Email Templates → Confirm signupの確認リンクを以下に設定してください。
@@ -123,3 +123,5 @@ npm test
 パスワード再設定はSupabaseの標準メールテンプレートに対応しています。[再設定の動作・環境別の戻り先・確認手順](docs/password-recovery.md) を参照してください。本番Site URLが現在のRelay URLなら追加設定は原則不要です。
 
 ホーム画面への追加・オフライン動作の確認は [PWAの利用手順](docs/pwa.md) を参照してください。
+
+管理画面の読み込み失敗は [管理RPCの25006修正と安全な診断](docs/admin-troubleshooting.md) を参照してください。管理SQLを適用済みの場合は新しい `202610050002_admin_read_only.sql` だけを追加適用します。

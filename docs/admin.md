@@ -4,7 +4,7 @@
 
 アプリは公開用Supabaseキーと本人のAuth Cookieだけを使います。追加キー・service_role・secret key・Auth設定変更は不要です。**新しいSQLの適用だけは必要**です。本作業では実プロジェクトを変更していません。
 
-1. SupabaseのSQL Editorで `supabase/migrations/202610050001_admin.sql` を実行します。既存の001・002を適用済みであることが前提です。初めて構築する場合は001 → 002 → 今回のSQLの順です。
+1. SupabaseのSQL Editorで `supabase/migrations/202610050001_admin.sql` を実行します。既存の001・002を適用済みであることが前提です。初めて構築する場合は001 → 002 → 管理SQL → `202610050002_admin_read_only.sql` の順です。管理SQLが適用済みの場合もread_only修正SQLだけを追加適用してください。
 2. 同一組織に同名の部署がある場合、適用はロールバックされます。下の確認SQLで重複・前後空白を見つけ、信頼できる運用者が部署名を整理してから再実行してください。自動削除・自動統合はしません。
 3. 最初の組織管理者が未設定なら、登録・メール確認・正式所属を済ませたユーザーに `supabase/setup/first-admin.sql` を適用します。ファイル内の **メールと組織UUIDを自分のものへ変更**してください。テスト組織の場合、先に `supabase/setup/test-membership.sql` を使用できます。既に組織管理者がいるならこの操作は不要です。
 4. 必要なら既存の別ユーザーを `/admin/users` から部署管理者へ変更します。自身の権限・利用状態は変更できません。
@@ -76,3 +76,5 @@ select id, organization_id, name from public.departments where name <> btrim(nam
 メール確認・パスワード再設定のURLは維持しています。再設定リンクは引き続き送信に使用した同じブラウザで開いてください。PWAの静的キャッシュに管理者データは保存しません。
 
 DB権限は実マイグレーションを適用したPGliteで検証しています。実SupabaseへのSQL適用、実Vercel/実機での確認、本番デプロイ操作は本作業からは行っていません。
+
+管理画面の読み込み失敗・安全なログの確認は [25006の修正手順](admin-troubleshooting.md) を参照してください。
