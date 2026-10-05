@@ -46,3 +46,10 @@ GitHubのoriginは `https://github.com/ryou-droid/relay.git`。初期確認でre
 - 実Supabase SSR SDK＋模擬Auth APIでcode/token_hashの両経路、redirectToとPKCE challengeの送信、Cookie永続化、本人確認、更新、ログアウト、検証Cookieのないブラウザの拒否を確認。
 - 本番URL固定、PreviewはVercel環境変数、開発はlocalhostまたは現在のCodespaceのみ。任意Hostから戻り先を作らない。許可されていないPreview hostnameを拒否するテストを追加。
 - Supabase Authの公開ソースではSite URLと同じscheme/host/portを許可。現在の本番Site URLが正しければテンプレート・Redirect URLsの追加変更は原則不要。別オリジンは許可が必要。実プロジェクト設定と実メール配送は未確認。
+
+## PWA対応
+
+- Next.js 16のManifest規約、standalone、Apple用meta・180pxアイコン、192/512pxとmaskableアイコン、faviconを追加。独自PWA依存パッケージは追加していない。
+- service workerをVMで実行し、公開静的ファイルのキャッシュ、ページのネットワーク優先と汎用オフライン画面、認証URL・Server Actions・API・RSC・外部Supabase通信のキャッシュ回避を確認。PNG寸法とICO構造を検証。
+- build・TypeScript・lint・全テストが成功。実機インストールと実Vercel上の認証は未確認。この作業環境ではローカルサーバーのlistenがEPERMで拒否されるため、ブラウザによるインストール試験は実施できていない。
+- Supabase設定・キー・DBは変更していない。デプロイ操作・プッシュ通知の実装も行っていない。利用と再確認はdocs/pwa.mdを参照。
