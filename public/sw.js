@@ -1,5 +1,5 @@
 /* Only public static files are cached. Never cache authenticated pages, Auth or API responses. */
-const CACHE = "relay-static-v2";
+const CACHE = "relay-static-v3";
 const OFFLINE = "/offline.html";
 const PUBLIC_FILES = [OFFLINE, "/launch.html", "/app-shell.css", "/app-shell.js", "/icons/relay-192.png", "/icons/relay-512.png", "/icons/relay-maskable-512.png", "/icons/apple-touch-icon.png", "/icons/relay.svg", "/favicon.ico"];
 const MAX_ENTRIES = 64;
@@ -57,5 +57,48 @@ self.addEventListener("fetch", (event) => {
       })());
     }
     return response;
+  })());
+});
+
+
+self.addEventListener("message", (event) => {
+  if (event.data?.type === "relay-push-support") event.ports[0]?.postMessage({ newPostPush: true });
+});
+self.addEventListener("push", (event) => {
+  event.waitUntil((async () => {
+    try {
+      const data = event.data?.json();
+      const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (data?.kind !== "new_post" || !uuid.test(data.event_id || "") || !uuid.test(data.post_id || "")) return;
+      // Recheck the current browser account, membership and suspension immediately
+      // before display. Never show another account's queued push after logout/switch.
+      const result = await fetch("/api/push/verify", { method: "POST", credentials: "include", cache: "no-store",
+        headers: { "Content-Type": "application/json" }, body: JSON.stringify({ event_id: data.event_id }) });
+      if (!result.ok || (await result.json()).allowed !== true) return;
+      await self.registration.showNotification("Relay", {
+        body: "新しい投稿が追加されました", icon: "/icons/relay-192.png", badge: "/icons/relay-192.png",
+        tag: `relay-new-post-${data.event_id}`, renotify: false,
+        data: { url: `/app/posts/${data.post_id}` },
+      });
+    } catch { /* No content, device keys or provider errors are logged. */ }
+  })());
+});
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  event.waitUntil((async () => {
+    const raw = event.notification.data?.url;
+    const path = typeof raw === "string" && /^\/app\/posts\/[0-9a-f-]{36}$/i.test(raw) ? raw : "/app";
+    const url = new URL(path, self.location.origin).href;
+    const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+    for (const client of windows) {
+      try {
+        if (new URL(client.url).origin !== self.location.origin) continue;
+        if ("navigate" in client) {
+          const navigated = await client.navigate(url);
+          if (navigated) { await navigated.focus(); return; }
+        }
+      } catch { /* Try another window, then open a new one. */ }
+    }
+    await self.clients.openWindow(url);
   })());
 });

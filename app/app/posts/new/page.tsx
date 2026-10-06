@@ -1,5 +1,6 @@
 import { session } from "@/lib/session";
 import PostForm from "@/components/post-form";
+export const maxDuration = 60;
 export default async function NewPost({
   searchParams,
 }: {

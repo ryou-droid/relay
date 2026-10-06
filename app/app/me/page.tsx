@@ -1,5 +1,7 @@
+import PushSettings from "@/components/push-settings";
+import { pushConfigured } from "@/lib/server/push-config";
 import { session } from "@/lib/session";
-import { logout } from "@/app/actions";
+import LogoutForm from "@/components/logout-form";
 export default async function Me() {
   const { user, membership, profile } = await session();
   return (
@@ -41,10 +43,9 @@ export default async function Me() {
         <p className="muted">
           所属・権限の変更は管理者へお問い合わせください。
         </p>
-        <form action={logout}>
-          <button className="secondary">ログアウト</button>
-        </form>
+        <LogoutForm />
       </section>
+      <PushSettings configured={pushConfigured()} />
     </>
   );
 }

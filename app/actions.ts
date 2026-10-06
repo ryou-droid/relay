@@ -1,4 +1,5 @@
 "use server";
+import { after } from "next/server";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { supabase, configured } from "@/lib/supabase";
@@ -162,6 +163,10 @@ export async function savePost(f: FormData) {
     p_assignees: f.getAll("assignees").map(String),
   });
   if (error) fail(path, error.message);
+  if (!id && process.env.WEB_PUSH_PRIVATE_KEY && process.env.SUPABASE_SERVICE_ROLE_KEY) after(async () => {
+    const { dispatchPostNotifications } = await import("@/lib/server/push-dispatch");
+    await dispatchPostNotifications(String(data));
+  });
   revalidatePath("/", "layout");
   redirect(`/app/posts/${data}`);
 }

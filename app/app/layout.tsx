@@ -25,22 +25,7 @@ async function ProtectedMemberLayout({
         <div className="header-right">
           <span className="department">{department}</span>
           {isAdminRole(membership!.role) && <Link className="admin-entry" href="/admin">管理</Link>}
-          <details className="notifications">
-            <summary aria-label="通知">
-              <svg
-                width="22"
-                height="22"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                aria-hidden="true"
-              >
-                <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
-              </svg>
-            </summary>
-            <div>通知機能は準備中です。重要連絡はホームで確認できます。</div>
-          </details>
+          <Link className="notification-bell" href="/app/me#notifications" aria-label="通知設定"><svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" /></svg></Link>
         </div>
       </header>
       <main className="content">{children}</main>

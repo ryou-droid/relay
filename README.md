@@ -110,7 +110,7 @@ npm test
 
 ## 今回未実装・次の段階
 
-組織の新規作成・設定UI、管理者用既読者名表示、通知配信・PWAプッシュ、課金、添付、検索、AI機能は未実装です。通知ベルは準備中表示です。PWAのManifest・service workerは導入済みです。APIとDBを独立させており、通知・期限1時間前のジョブはdue_atを使って追加できます。
+組織の新規作成・設定UI、管理者用既読者名表示、重要連絡・期限の通知、課金、添付、検索、AI機能は未実装です。通知ベルからマイページの通知設定へ移動します。PWAのManifest・service workerは導入済みです。APIとDBを独立させており、通知・期限1時間前のジョブはdue_atを使って追加できます。
 
 次は実Supabaseでの管理機能統合テストと監査データの保持方針を整備してください。003適用時はDB側でカテゴリ抽出とカーソルページングを行います。004適用時はホームの初回取得量をさらに減らします。
 
@@ -133,3 +133,5 @@ npm test
 PWA起動用の公開App Shell・分割Streaming・ホーム初回15件取得は [起動と画面表示](docs/startup-performance.md) を参照してください。003適用済みの場合は `supabase/migrations/202610050004_startup_feed.sql` を追加実行します。
 
 組織管理者のQR招待（一般用・管理者候補用）は [QR招待](docs/qr-invitations.md) を参照してください。`supabase/migrations/202610050005_qr_invitations.sql` の追加適用が必要です。
+
+新規投稿のPWA通知は [新規投稿通知](docs/new-post-notifications.md) を参照してください。`202610060001_new_post_push.sql`、サーバー側環境変数、Supabase Cronの設定が必要です。通知をOFFのままでも通常利用できます。
